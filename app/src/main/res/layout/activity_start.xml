@@ -6,12 +6,12 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="@android:color/white"
+    android:background="@color/primary"
     android:gravity="center">
 
     <!-- App Logo (optional) -->
     <ImageView
-        android:id="@+id/shapeableImageView"
+        android:id="@+id/bw.jpg"
         android:layout_width="120dp"
         android:layout_height="120dp"
         android:src="@drawable/ic_launcher_foreground"
@@ -24,7 +24,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        app:boxStrokeColor="@color/purple_500"
+        app:boxStrokeColor="@color/light"
+        android:shadowColor="@color/light"
+        android:textColor="@color/light"
         app:boxBackgroundMode="outline">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -41,7 +43,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="24dp"
-        app:boxStrokeColor="@color/purple_500"
+        app:boxStrokeColor="@color/light"
+        android:shadowColor="@color/light"
+        android:textColor="@color/light"
         app:boxBackgroundMode="outline">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -60,5 +64,5 @@
         android:layout_height="wrap_content"
         android:text="Login"
         android:textColor="@android:color/white"
-        android:backgroundTint="@color/purple_500"/>
+        android:backgroundTint="@color/button"/>
 </LinearLayout>
