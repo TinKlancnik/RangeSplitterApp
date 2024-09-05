@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Rectangle with rounded bottom-right corner -->
+    <path
+        android:fillColor="#43846F"
+        android:pathData="M0,0 H100 V80 Q100,100 80,100 H0 Z" />
+</vector>
