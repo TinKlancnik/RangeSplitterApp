@@ -9,7 +9,6 @@
     android:background="@color/primary"
     android:gravity="center">
 
-    <!-- App Logo (optional) -->
     <ImageView
         android:id="@+id/bw.jpg"
         android:layout_width="120dp"

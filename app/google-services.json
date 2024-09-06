@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "185611263508",
+    "project_id": "rangesplitter123",
+    "storage_bucket": "rangesplitter123.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:185611263508:android:f0c4bf950e4ecb835e9101",
+        "android_client_info": {
+          "package_name": "RangeSplitter.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnW6Bq2Lo28r-fO60urV-ZHkxJ8B7Hx2g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

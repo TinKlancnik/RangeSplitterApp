@@ -5,8 +5,9 @@
         android:bottomLeftRadius="0dp"
         android:topRightRadius="0dp"
         android:topLeftRadius="0dp" />
+
     <stroke
         android:width="7dp"
-        android:color="@color/green" /> <!-- Change the color to your desired color -->
+        android:color="@color/light" /> <!-- Change the color to your desired color -->
     <solid android:color="@android:color/transparent" />
 </shape>
