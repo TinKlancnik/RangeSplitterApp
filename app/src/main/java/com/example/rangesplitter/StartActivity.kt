@@ -3,6 +3,7 @@ package com.example.rangesplitter
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 
 class StartActivity: AppCompatActivity (){
@@ -14,6 +15,8 @@ class StartActivity: AppCompatActivity (){
         window.navigationBarColor = resources.getColor(android.R.color.black)
 
         val loginButton = findViewById<Button>(R.id.loginButton)
+        val username=findViewById<EditText>(R.id.usernameInput)
+        val password=findViewById<EditText>(R.id.passwordInput)
 
         loginButton.setOnClickListener{
             val intent = Intent(this, MenuActivity::class.java)
