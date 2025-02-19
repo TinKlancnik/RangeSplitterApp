@@ -6,15 +6,18 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import bybit.sdk.rest.ByBitRestClient
+import bybit.sdk.rest.account.WalletBalanceParams
+import bybit.sdk.shared.AccountType
+import bybit.sdk.rest.okHttpClientProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import com.example.rangesplitter.api.BybitRepository
+import kotlinx.coroutines.runBlocking
 
 class MenuActivity : AppCompatActivity() {
 
     private lateinit var balanceTextView: TextView
-    private val repository = BybitRepository()
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,31 +27,37 @@ class MenuActivity : AppCompatActivity() {
         balanceTextView = findViewById(R.id.balanceTextView)
         val mainButton = findViewById<Button>(R.id.splitButton)
 
-        // Fetch the balance when the activity is created
-        fetchAndDisplayBalance()
-
         mainButton.setOnClickListener {
             val intent = Intent(this, SplitActivity::class.java)
             startActivity(intent)
         }
+
+        // Fetch the balance when the activity is created
+        fetchAndDisplayBalance()
     }
 
     private fun fetchAndDisplayBalance() {
-        // Use coroutines to fetch the balance in the background
-        CoroutineScope(Dispatchers.IO).launch {
-            val apiKey = "0YegwCRINljpDctbNr"
-            val secretKey = "Luh0b2FYpywY50b1ppqpLV50R4LX8QIswXJ6"
+        val apiKey = "UV6R9A3gNuk9vl0vVQ"
+        val apiSecret = "vRdpemzToMITR53ftZSM3ar7kSdx6NeodJTn"
 
-            // Call the function to get the wallet balance
-            val balance = repository.getWalletBalance(apiKey, secretKey)
+        // Initialize ByBitRestClient
+        val bybitClient = ByBitRestClient(apiKey, apiSecret, true,  httpClientProvider = okHttpClientProvider)
 
-            // Update the UI on the main thread
-            runOnUiThread {
-                if (balance != null) {
-                    balanceTextView.text = "Balance: $$balance USDT"
+        // Use runBlocking to call the blocking function
+        runBlocking {
+            try {
+                val walletBalanceResponse = bybitClient.accountClient.getWalletBalanceBlocking(
+                    WalletBalanceParams(AccountType.UNIFIED, listOf("BTC"))
+                )
+
+                // Display the balance
+                if (walletBalanceResponse != null) {
+                    balanceTextView.text = "Balance: $walletBalanceResponse BTC"
                 } else {
                     balanceTextView.text = "Error fetching balance"
                 }
+            } catch (e: Exception) {
+                balanceTextView.text = "Error: ${e.message}"
             }
         }
     }
