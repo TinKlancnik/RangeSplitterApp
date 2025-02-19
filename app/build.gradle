@@ -54,5 +54,6 @@ dependencies {
     implementation "io.ktor:ktor-client-json:2.2.1"
     implementation "io.ktor:ktor-serialization-kotlinx-json:2.2.1"
     implementation("io.github.alleyway:bybit-kotlin-api:0.6.0")
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.0"
 
 }

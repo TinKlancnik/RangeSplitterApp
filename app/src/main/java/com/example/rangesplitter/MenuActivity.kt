@@ -3,6 +3,7 @@ package com.example.rangesplitter
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -10,10 +11,9 @@ import bybit.sdk.rest.ByBitRestClient
 import bybit.sdk.rest.account.WalletBalanceParams
 import bybit.sdk.shared.AccountType
 import bybit.sdk.rest.okHttpClientProvider
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlin.coroutines.*
+import kotlinx.coroutines.*
 
 class MenuActivity : AppCompatActivity() {
 
@@ -49,10 +49,10 @@ class MenuActivity : AppCompatActivity() {
                 val walletBalanceResponse = bybitClient.accountClient.getWalletBalanceBlocking(
                     WalletBalanceParams(AccountType.UNIFIED, listOf("BTC"))
                 )
-
                 // Display the balance
                 if (walletBalanceResponse != null) {
-                    balanceTextView.text = "Balance: $walletBalanceResponse BTC"
+                    val totalEquity = walletBalanceResponse.result?.list?.get(0)?.totalEquity
+                    balanceTextView.text = "Total Balance: ${totalEquity} USDT"
                 } else {
                     balanceTextView.text = "Error fetching balance"
                 }
