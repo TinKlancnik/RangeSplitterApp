@@ -11,35 +11,34 @@
         android:id="@+id/balanceTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
-        android:layout_marginBottom="100dp"
+        android:layout_marginStart="35dp"
+        android:layout_marginBottom="371dp"
         android:text="Balance: $0.00"
         android:textColor="#C8CCBF"
-        android:textSize="24sp"
-        app:layout_constraintBottom_toTopOf="@id/splitButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.062"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView"
-        app:layout_constraintVertical_bias="0.102" />
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@+id/splitButton"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/splitButton"
         android:layout_width="177dp"
         android:layout_height="48dp"
         android:layout_marginStart="116dp"
+        android:layout_marginTop="93dp"
         android:backgroundTint="@color/button"
         android:text="Split"
         android:textColor="@color/black"
         app:layout_constraintStart_toStartOf="parent"
-        tools:layout_editor_absoluteY="644dp" />
+        app:layout_constraintTop_toBottomOf="@+id/trade" />
 
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        tools:layout_editor_absoluteX="33dp"
-        tools:layout_editor_absoluteY="33dp"
+        android:layout_marginStart="33dp"
+        android:layout_marginTop="33dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         tools:srcCompat="@tools:sample/avatars" />
 
     <TextView
@@ -53,5 +52,15 @@
         android:text="Tin Klančnik"
         app:layout_constraintStart_toEndOf="@+id/imageView"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/trade"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="160dp"
+        android:layout_marginTop="340dp"
+        android:text="Button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

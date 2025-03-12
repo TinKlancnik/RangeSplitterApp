@@ -20,6 +20,7 @@
         app:shapeAppearance="@style/RoundedBottomRightCornerShape" />
 
     <TextView
+        android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -73,39 +74,66 @@
         android:id="@+id/spinnerValues"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="68dp"
-        android:layout_marginTop="26dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="12dp"
         android:minHeight="48dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextRangeLow" />
 
+    <Spinner
+        android:id="@+id/spinnerValues2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="12dp"
+        android:minHeight="48dp"
+        app:layout_constraintStart_toEndOf="@+id/spinnerValues"
+        app:layout_constraintTop_toBottomOf="@+id/editTextRangeLow" />
+
     <Button
         android:id="@+id/calculateButton"
-        android:layout_width="177dp"
-        android:layout_height="48dp"
-        android:layout_marginTop="26dp"
-        android:layout_marginEnd="38dp"
+        android:layout_width="131dp"
+        android:layout_height="49dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="256dp"
         android:backgroundTint="@color/button"
         android:text="Calculate"
         android:textColor="@color/black"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editTextRangeLow" />
+        app:layout_constraintTop_toBottomOf="@+id/spinnerValues" />
 
-    <TextView
-        android:id="@+id/resultTextView"
-        android:layout_width="match_parent"
-        android:layout_height="270dp"
-        android:layout_marginTop="50dp"
-        android:background="@drawable/rounded_top_corners"
-        android:gravity="center"
+    <Button
+        android:id="@+id/buttonBuy"
+        android:layout_width="187dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="35dp"
+        android:layout_marginEnd="112dp"
+        android:backgroundTint="#5B9752"
+        android:text="Buy/Long"
         android:textColor="@color/black"
-        android:textSize="22dp"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintTop_toBottomOf="@+id/calculateButton" />
+
+    <Button
+        android:id="@+id/calculateButton3"
+        android:layout_width="188dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="11dp"
+        android:layout_marginEnd="112dp"
+        android:backgroundTint="#C36161"
+        android:text="Sell/Short"
+        android:textColor="@color/black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonBuy" />
+
+    <Spinner
+        android:id="@+id/coinList"
+        android:layout_width="251dp"
+        android:layout_height="46dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="24dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/calculateButton"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintTop_toBottomOf="@+id/shapeableImageView" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
