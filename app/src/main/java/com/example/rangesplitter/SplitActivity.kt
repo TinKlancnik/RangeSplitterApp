@@ -19,27 +19,25 @@ import bybit.sdk.rest.market.InstrumentsInfoResultItem
 import bybit.sdk.rest.okHttpClientProvider
 import bybit.sdk.rest.order.PlaceOrderParams
 import bybit.sdk.rest.order.PlaceOrderResponse
+import bybit.sdk.rest.position.PositionInfoParams
+import bybit.sdk.rest.position.PositionInfoResponse
 import bybit.sdk.shared.Category
 import bybit.sdk.shared.OrderType
 import bybit.sdk.shared.Side
 import bybit.sdk.shared.TimeInForce
-
-data class TickersParams(
-    val category: Category,
-    val symbol: String,
-    val baseCoin: String? = null,
-    val expDate: String? = null
-)
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import org.json.JSONObject
 
 class SplitActivity : AppCompatActivity() {
 
     private lateinit var coinAdapter: ArrayAdapter<String>
     private val coinList = mutableListOf<String>()
     private var selectedSymbol: String = "BTCUSDT"  // Default symbol
-    private val updateInterval: Long = 3000  // Update every 3 seconds
+    private val updateInterval: Long = 500  // Update every 3 seconds
     private val handler = android.os.Handler()
     private lateinit var coinPriceTextView: TextView
-
 
     @SuppressLint("SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,8 +53,14 @@ class SplitActivity : AppCompatActivity() {
         coinSpinner.adapter = coinAdapter
 
         // Set up the spinner listener to update the selected symbol
-        coinSpinner.setOnItemSelectedListener(object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>, view: View, position: Int, id: Long) {
+        coinSpinner.setOnItemSelectedListener(object :
+            android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: android.widget.AdapterView<*>,
+                view: View,
+                position: Int,
+                id: Long
+            ) {
                 selectedSymbol = coinList[position]
             }
 
@@ -76,8 +80,7 @@ class SplitActivity : AppCompatActivity() {
         val rangeLowEditText = findViewById<EditText>(R.id.editTextRangeLow)
         val amountEditText = findViewById<EditText>(R.id.editTextAmount)
         val buyButton = findViewById<Button>(R.id.buttonBuy)
-        val coinPriceTextView = findViewById<TextView>(R.id.coinPrice)
-
+        coinPriceTextView = findViewById<TextView>(R.id.coinPrice)
 
         buyButton.setOnClickListener {
             fetchPerpetualCoins()
@@ -92,6 +95,9 @@ class SplitActivity : AppCompatActivity() {
             closekey(it)
         }
         fetchPerpetualCoins()
+        fetchOpenTrades()
+
+        startPriceUpdates()  // Start periodic price updates
     }
 
     private fun closekey(view: View) {
@@ -151,7 +157,6 @@ class SplitActivity : AppCompatActivity() {
 
     private fun fetchPerpetualCoins() {
         val bybitClient = getByBitClient()
-        Log.d("MarketClientMethods", bybitClient.marketClient::class.java.methods.joinToString { it.name })
 
         val params = InstrumentsInfoParams(
             category = Category.linear,
@@ -176,48 +181,82 @@ class SplitActivity : AppCompatActivity() {
         bybitClient.marketClient.getInstrumentsInfo(params, callback)
     }
 
+    private fun fetchOpenTrades() {
+        val bybitClient = getByBitClient() // Ensure this returns a valid ByBitPositionClient
+
+        val params = PositionInfoParams(
+            category = Category.linear,
+            symbol = null, // No need for `val` inside the object
+            settleCoin = "USDT"
+        )
+
+       val callback = object : ByBitRestApiCallback<PositionInfoResponse> {
+           override fun onSuccess(result: PositionInfoResponse) {
+               Log.d("OpenTrades", "Full response: ${result.result.list}")
+               result.result.list.forEach { position ->
+                   Log.d("OpenTrades", "Symbol: ${position.symbol}, Size: ${position.size}, PnL: ${position.positionValue}")
+               }
+           }
+           override fun onError(error: Throwable) {
+               Log.e("OpenTrades", "Error fetching supported instruments: ${error.message}")
+           }
+       }
+        bybitClient.positionClient.getPositionInfo(params, callback)
+    }
+
     private fun startPriceUpdates() {
         handler.post(object : Runnable {
             override fun run() {
-                //fetchCoinPrice(selectedSymbol)
+                fetchCoinPrice(selectedSymbol)
                 handler.postDelayed(this, updateInterval)
             }
         })
     }
-/*
-    private fun fetchCoinPrice(symbol: String) {
-        val bybitClient = getByBitClient()
 
-        // Set up the TickersParams with the correct symbol
-        val tickersParams = TickersParams(
-            category = Category.linear,
-            symbol = symbol
-        )
+    fun fetchCoinPrice(symbol: String) {
+        val client = OkHttpClient()
 
-        // Define the callback to handle the response
-        val callback = object : ByBitRestApiCallback<TickersResponse> {
-            override fun onSuccess(result: TickersResponse) {
-                // Get the price from the response
-                val price = result.result?.list?.firstOrNull()?.lastPrice ?: "N/A"
-                runOnUiThread {
-                    // Update UI with the price
-                    coinPriceTextView.text = "Price: $price"
+        // Define the URL and the parameters for the request
+        val url = "https://api-testnet.bybit.com/v5/market/tickers?category=inverse&symbol=$symbol"
+
+        // Build the GET request
+        val request = Request.Builder()
+            .url(url)
+            .build()
+
+        // Execute the request on a background thread to avoid blocking the main UI thread
+        Thread {
+            try {
+                val response: Response = client.newCall(request).execute()
+
+                if (response.isSuccessful) {
+                    // Parse the response JSON
+                    val jsonResponse = JSONObject(response.body?.string() ?: "")
+                    val result = jsonResponse.getJSONObject("result")
+
+                    // Extract information from the response
+                    if (result.length() > 0) {
+                        val ticker = result.getJSONArray("list").getJSONObject(0)
+                        val lastPrice = ticker.getString("lastPrice")
+
+                        // Update UI on the main thread
+                        runOnUiThread {
+                            coinPriceTextView.text = "Price: $lastPrice"
+                        }
+
+                        // Log the result (for debugging)
+                        Log.d("CoinPrice", "Last price for $symbol: $lastPrice")
+                    } else {
+                        Log.d("CoinPrice", "No data available for $symbol.")
+                    }
+                } else {
+                    Log.d("CoinPrice", "Request failed with status code: ${response.code}")
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-
-            override fun onError(error: Throwable) {
-                // Log the error
-                Log.e("CoinPrice", "Error fetching coin price: ${error.message}")
-            }
-        }
-
-        // Make the API call to get tickers directly through the ByBitRestClient
-        bybitClient.marketClient.getTickers(tickersParams, callback)
+        }.start() // Start the background thread
     }
-
- */
-
-
 
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
