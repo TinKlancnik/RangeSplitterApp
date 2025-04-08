@@ -13,22 +13,28 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import bybit.sdk.rest.ByBitRestApiCallback
 import bybit.sdk.rest.ByBitRestClient
+import bybit.sdk.rest.account.WalletBalanceParams
 import bybit.sdk.rest.market.InstrumentsInfoParams
 import bybit.sdk.rest.market.InstrumentsInfoResponse
 import bybit.sdk.rest.market.InstrumentsInfoResultItem
 import bybit.sdk.rest.okHttpClientProvider
 import bybit.sdk.rest.order.PlaceOrderParams
 import bybit.sdk.rest.order.PlaceOrderResponse
+import bybit.sdk.rest.order.ordersOpen
 import bybit.sdk.rest.position.PositionInfoParams
 import bybit.sdk.rest.position.PositionInfoResponse
+import bybit.sdk.shared.AccountType
 import bybit.sdk.shared.Category
 import bybit.sdk.shared.OrderType
 import bybit.sdk.shared.Side
 import bybit.sdk.shared.TimeInForce
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONObject
+import bybit.sdk.rest.order.OrdersOpenParams
+import bybit.sdk.rest.order.OrdersOpenResponse
 
 class SplitActivity : AppCompatActivity() {
 
@@ -95,9 +101,9 @@ class SplitActivity : AppCompatActivity() {
             closekey(it)
         }
         fetchPerpetualCoins()
-        fetchOpenTrades()
-
-        startPriceUpdates()  // Start periodic price updates
+        //fetchOpenTrades()
+        startPriceUpdates()
+        fetchOpenOrders()
     }
 
     private fun closekey(view: View) {
@@ -181,12 +187,21 @@ class SplitActivity : AppCompatActivity() {
         bybitClient.marketClient.getInstrumentsInfo(params, callback)
     }
 
+    private fun startPriceUpdates() {
+        handler.post(object : Runnable {
+            override fun run() {
+                fetchCoinPrice(selectedSymbol)
+                handler.postDelayed(this, updateInterval)
+            }
+        })
+    }
+
     private fun fetchOpenTrades() {
         val bybitClient = getByBitClient() // Ensure this returns a valid ByBitPositionClient
 
         val params = PositionInfoParams(
             category = Category.linear,
-            symbol = null, // No need for `val` inside the object
+            symbol = null,
             settleCoin = "USDT"
         )
 
@@ -204,13 +219,25 @@ class SplitActivity : AppCompatActivity() {
         bybitClient.positionClient.getPositionInfo(params, callback)
     }
 
-    private fun startPriceUpdates() {
-        handler.post(object : Runnable {
-            override fun run() {
-                fetchCoinPrice(selectedSymbol)
-                handler.postDelayed(this, updateInterval)
+    private fun fetchOpenOrders() {
+        val bybitClient = getByBitClient()
+
+        val params=OrdersOpenParams(
+            category = Category.linear,
+            symbol = "BTCUSDT"
+        )
+        val callback = object : ByBitRestApiCallback<OrdersOpenResponse> {
+            override fun onSuccess(result: OrdersOpenResponse) {
+                Log.d("OpenOrders", "Full response: ${result.result.list}")
+                result.result.list.forEach { position ->
+                    Log.d("OpenOrders", "Symbol: ${position.price}, Size: ${position.qty}, PnL: ${position.orderStatus}")
+                }
             }
-        })
+            override fun onError(error: Throwable) {
+                Log.e("OpenOrders", "Error fetching supported instruments: ${error.message}")
+            }
+        }
+        bybitClient.orderClient.ordersOpen(params, callback)
     }
 
     fun fetchCoinPrice(symbol: String) {
