@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '2.0.0'
 }
 
 android {
@@ -9,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.rangesplitter"
-        minSdk 21
+        minSdk 26
         targetSdk 34
         versionCode 1
         versionName "1.0"
@@ -43,16 +44,48 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.12.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+
+    // Network & JSON
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // Retrofit (if you're also using it elsewhere)
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+
+    // Kotlin
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.0.20"
+
+    // Coroutines
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
+
+    // SLF4J (or swap for Log.d)
+    implementation "org.slf4j:slf4j-simple:2.0.9"
+
+    // Testing
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
-    implementation 'com.google.android.material:material:1.12.0'
-    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
-    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
-    implementation 'com.squareup.okhttp3:okhttp:4.11.0'
-    implementation "io.ktor:ktor-client-serialization:2.2.1"
-    implementation "io.ktor:ktor-client-json:2.2.1"
-    implementation "io.ktor:ktor-serialization-kotlinx-json:2.2.1"
-    implementation "io.github.alleyway:bybit-kotlin-api:0.6.0"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.0.20"
+
+    // Ktor
+    implementation "io.ktor:ktor-client-core:2.2.1"
+    implementation "io.ktor:ktor-client-cio:2.2.1"
+    implementation "io.ktor:ktor-client-content-negotiation:2.2.1"
+    implementation "io.ktor:ktor-serialization-kotlinx-json:2.2.1" // <-- required with @Serializable
+    implementation "io.ktor:ktor-client-okhttp:2.2.1"
+
+    // Kotlinx Serialization
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3"
+
+    // Resilience4j RateLimiter
+    implementation "io.github.resilience4j:resilience4j-kotlin:2.2.0"
+    implementation("io.github.resilience4j:resilience4j-all:2.2.0")
+
+    // Lombok dependency
+    implementation 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+
+
+
 }

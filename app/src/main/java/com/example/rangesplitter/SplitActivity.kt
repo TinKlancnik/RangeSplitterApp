@@ -222,10 +222,21 @@ class SplitActivity : AppCompatActivity() {
     private fun fetchOpenOrders() {
         val bybitClient = getByBitClient()
 
-        val params=OrdersOpenParams(
+        val params = OrdersOpenParams(
             category = Category.linear,
-            symbol = "BTCUSDT"
+            settleCoin = "USDT"
+
         )
+
+        // Log the full URL before sending the request
+        val urlBuilder = StringBuilder("https://api-testnet.bybit.com/v5/order/realtime?")
+        urlBuilder.append("category=${params.category}")
+        params.settleCoin?.let { urlBuilder.append("&settleCoin=$it") }
+        // Don't append symbol if it's null
+        params.symbol?.let { urlBuilder.append("&symbol=$it") }
+
+        Log.d("OpenOrders", "Request URL: $urlBuilder")
+
         val callback = object : ByBitRestApiCallback<OrdersOpenResponse> {
             override fun onSuccess(result: OrdersOpenResponse) {
                 Log.d("OpenOrders", "Full response: ${result.result.list}")
@@ -237,8 +248,10 @@ class SplitActivity : AppCompatActivity() {
                 Log.e("OpenOrders", "Error fetching supported instruments: ${error.message}")
             }
         }
+
         bybitClient.orderClient.ordersOpen(params, callback)
     }
+
 
     fun fetchCoinPrice(symbol: String) {
         val client = OkHttpClient()

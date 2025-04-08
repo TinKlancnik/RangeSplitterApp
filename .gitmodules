@@ -1,0 +1,3 @@
+[submodule "libs/bybit-kotlin-api"]
+	path = libs/bybit-kotlin-api
+	url = https://github.com/alleyway/bybit-kotlin-api.git
