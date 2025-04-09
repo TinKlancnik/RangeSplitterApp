@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="18dp"
+    android:orientation="horizontal"
+    android:background="?android:attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:divider="?android:attr/dividerHorizontal"
+    android:showDividers="middle">
+
+    <!-- Vertical layout for coin name and direction -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_weight="1.5"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/coinName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BTC/USDT"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/direction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Long"
+            android:textColor="#4CAF50"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- Trigger Price -->
+    <TextView
+        android:id="@+id/triggerPrice"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:text="30000.0"
+        android:textSize="14sp" />
+
+    <!-- Quantity -->
+    <TextView
+        android:id="@+id/quantity"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:text="0.05"
+        android:textSize="14sp" />
+
+    <!-- Cancel Button -->
+    <Button
+        android:id="@+id/cancelButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#F44336"
+        android:padding="6dp"
+        android:text="Cancel"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp" />
+</LinearLayout>
