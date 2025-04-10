@@ -1,35 +1,51 @@
 <resources>
-    <!-- Base application theme -->
-    <style name="AppTheme" parent="Theme.Material3.Light.NoActionBar">
-
-        <!-- Primary brand color. -->
+    <!-- Base Theme -->
+    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Color Palette -->
         <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryVariant">@color/secondary</item>
-        <item name="colorOnPrimary">@color/button</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/secondary</item>
-        <!-- Text appearances -->
-        <item name="textAppearanceBodySmall">@style/TextAppearance.Material3.BodySmall</item>
-        <item name="textAppearanceBodyMedium">@style/TextAppearance.Material3.BodyMedium</item>
-        <item name="textAppearanceBodyLarge">@style/TextAppearance.Material3.BodyLarge</item>
-        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.Material3.HeadlineSmall</item>
-        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Material3.HeadlineMedium</item>
-        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.Material3.HeadlineLarge</item>
+        <item name="colorPrimaryContainer">@color/cardInputBG</item>
+        <item name="colorOnPrimary">@color/textPrimary</item>
 
-        <!-- Other attributes you can customize -->
+        <item name="colorSecondary">@color/primaryAccent</item>
+        <item name="colorSecondaryContainer">@color/buttonDefault</item>
+        <item name="colorOnSecondary">@color/buttonTextColor</item>
+
+        <item name="colorSurface">@color/primary</item>
+        <item name="colorOnSurface">@color/textPrimary</item>
+        <item name="colorOnBackground">@color/textPrimary</item>
+        <item name="colorError">@color/red</item>
+        <item name="colorOnError">@color/white</item>
+
+        <!-- Typography (optional, fallback on Material3 styles) -->
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Material3.BodyMedium</item>
+
+        <!-- Window styling -->
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="CustomEditText" parent="Widget.AppCompat.EditText">
-        <item name="colorControlNormal">@color/light</item>
-        <item name="colorControlActivated">@color/light</item>
-        <item name="android:textColorHint">@color/light</item>
+    <!-- Custom EditText Style -->
+    <style name="CustomEditTextStyle">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:layout_marginHorizontal">24dp</item>
+        <item name="android:textColor">@color/textPrimary</item>
+        <item name="android:backgroundTint">@color/cardInputBG</item>
+        <item name="android:paddingHorizontal">16dp</item>
     </style>
 
-    <!-- Add your custom styles if needed -->
+    <!-- Optional for AppCompat legacy EditTexts -->
+    <style name="CustomEditText" parent="Widget.AppCompat.EditText">
+        <item name="colorControlNormal">@color/textMuted</item>
+        <item name="colorControlActivated">@color/primaryAccent</item>
+        <item name="android:textColorHint">@color/textMuted</item>
+        <item name="android:textColor">@color/textPrimary</item>
+    </style>
+
+    <!-- Optional for TextInputLayouts if you use them -->
     <style name="CustomTextInputStyle" parent="Widget.Material3.TextInputLayout.OutlinedBox">
-        <item name="boxStrokeColor">@color/primary</item>
-        <item name="hintTextColor">@color/secondary</item>
+        <item name="boxStrokeColor">@color/primaryAccent</item>
+        <item name="hintTextColor">@color/textMuted</item>
+        <item name="boxBackgroundColor">@color/cardInputBG</item>
     </style>
 </resources>

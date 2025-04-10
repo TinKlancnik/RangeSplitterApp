@@ -48,7 +48,7 @@ class SplitActivity : AppCompatActivity() {
         val triggerPrice:String,
         val side: String,
         val quantity: String,
-        val orderId: String // You’ll need this to cancel the order
+        val orderId: String
     )
 
 

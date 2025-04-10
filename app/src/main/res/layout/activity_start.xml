@@ -23,9 +23,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        app:boxStrokeColor="@color/light"
-        android:shadowColor="@color/light"
-        android:textColor="@color/light"
+        app:boxStrokeColor="@color/primaryAccent"
+        android:shadowColor="@color/primaryAccent"
+        android:textColor="@color/textPrimary"
         app:boxBackgroundMode="outline">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -42,9 +42,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="24dp"
-        app:boxStrokeColor="@color/light"
-        android:shadowColor="@color/light"
-        android:textColor="@color/light"
+        app:boxStrokeColor="@color/primaryAccent"
+        android:shadowColor="@color/primaryAccent"
+        android:textColor="@color/textPrimary"
         app:boxBackgroundMode="outline">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -62,6 +62,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Login"
-        android:textColor="@android:color/white"
-        android:backgroundTint="@color/button"/>
+        android:textColor="@color/buttonTextColor"
+        android:backgroundTint="@color/buttonDefault"/>
 </LinearLayout>

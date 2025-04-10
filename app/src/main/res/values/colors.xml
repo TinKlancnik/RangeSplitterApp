@@ -7,9 +7,20 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="primary">#243D55</color>
-    <color name="light">#C8CCBF</color>
-    <color name="button">#72A4C2</color>
-    <color name="secondary">#D2E4EA</color>
+
+    //Color Palette
+    <color name="primary">#1B2B40</color>
+    <color name="cardInputBG">#22354D</color>
+    <color name="primaryAccent">#5DADE2</color>
+    <color name="highlightCTA">#00C9A7</color>
     <color name="green">#43846F</color>
+    <color name="red">#C36161</color>
+    <color name="textPrimary">#EAEDED</color>
+    <color name="textMuted">#AAB7B8</color>
+
+    //Buttons
+    <color name="buttonDefault">#3A5A77</color>
+    <color name="buttonHover">#4A6B8C</color>
+    <color name="buttonPressed">#2F4D66</color>
+    <color name="buttonTextColor">#EAEDED</color>
 </resources>

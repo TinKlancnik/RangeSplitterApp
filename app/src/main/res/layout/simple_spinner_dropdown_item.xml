@@ -3,6 +3,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:minWidth="40dp"
-    android:background="@color/secondary">
+    android:background="@color/cardInputBG">
 
 </androidx.constraintlayout.widget.ConstraintLayout>

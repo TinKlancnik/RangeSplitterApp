@@ -8,6 +8,6 @@
 
     <stroke
         android:width="7dp"
-        android:color="@color/light" /> <!-- Change the color to your desired color -->
+        android:color="@color/black" /> <!-- Change the color to your desired color -->
     <solid android:color="@android:color/transparent" />
 </shape>

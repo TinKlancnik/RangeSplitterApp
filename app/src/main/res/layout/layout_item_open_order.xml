@@ -1,19 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="18dp"
     android:orientation="horizontal"
-    android:background="?android:attr/selectableItemBackground"
+    android:padding="16dp"
     android:gravity="center_vertical"
-    android:divider="?android:attr/dividerHorizontal"
-    android:showDividers="middle">
+    android:background="@color/cardInputBG"
+    android:divider="@android:color/transparent"
+    android:showDividers="middle"
+    android:dividerPadding="8dp">
 
-    <!-- Vertical layout for coin name and direction -->
+    <!-- Coin info -->
     <LinearLayout
         android:layout_width="0dp"
-        android:layout_weight="1.5"
         android:layout_height="wrap_content"
+        android:layout_weight="1.5"
         android:orientation="vertical">
 
         <TextView
@@ -22,43 +22,53 @@
             android:layout_height="wrap_content"
             android:text="BTC/USDT"
             android:textStyle="bold"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            android:textColor="@color/textPrimary" />
 
         <TextView
             android:id="@+id/direction"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Long"
-            android:textColor="#4CAF50"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            android:textColor="@color/green" />
     </LinearLayout>
 
     <!-- Trigger Price -->
     <TextView
         android:id="@+id/triggerPrice"
         android:layout_width="0dp"
-        android:layout_weight="1"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:text="30000.0"
-        android:textSize="14sp" />
+        android:textSize="14sp"
+        android:textColor="@color/textPrimary"
+        android:gravity="center_horizontal" />
 
     <!-- Quantity -->
     <TextView
         android:id="@+id/quantity"
         android:layout_width="0dp"
-        android:layout_weight="1"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:text="0.05"
-        android:textSize="14sp" />
+        android:textSize="14sp"
+        android:textColor="@color/textPrimary"
+        android:gravity="center_horizontal" />
 
     <!-- Cancel Button -->
     <Button
         android:id="@+id/cancelButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:backgroundTint="#F44336"
-        android:padding="6dp"
+        android:backgroundTint="@color/red"
         android:text="Cancel"
-        android:textColor="#FFFFFF"
-        android:textSize="12sp" />
+        android:textSize="12sp"
+        android:textColor="@color/white"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="6dp"
+        android:layout_marginStart="12dp"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:stateListAnimator="@null" />
 </LinearLayout>
