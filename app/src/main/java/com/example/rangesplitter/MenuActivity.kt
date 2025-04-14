@@ -48,10 +48,8 @@ class MenuActivity : AppCompatActivity() {
         val apiKey = "UV6R9A3gNuk9vl0vVQ"
         val apiSecret = "vRdpemzToMITR53ftZSM3ar7kSdx6NeodJTn"
 
-        // Initialize ByBitRestClient
         val bybitClient = ByBitRestClient(apiKey, apiSecret, true,  httpClientProvider = okHttpClientProvider)
 
-        // Use runBlocking to call the blocking function
         runBlocking {
             try {
                 val walletBalanceResponse = bybitClient.accountClient.getWalletBalanceBlocking(

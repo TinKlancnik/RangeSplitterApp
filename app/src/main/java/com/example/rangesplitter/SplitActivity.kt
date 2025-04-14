@@ -13,6 +13,7 @@ import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import bybit.sdk.rest.ByBitRestApiCallback
@@ -74,13 +75,20 @@ class SplitActivity : AppCompatActivity() {
                 position: Int,
                 id: Long
             ) {
-                selectedSymbol = coinList[position]
+                if (position == 0) {
+                    // Default option selected (e.g., "Select coin")
+                    selectedSymbol = "BTCUSDT"  // or keep default "BTCUSDT" if you'd like
+                } else {
+                    selectedSymbol = coinList[position]
+                }
             }
 
             override fun onNothingSelected(parent: android.widget.AdapterView<*>) {
-                selectedSymbol = "BTCUSDT"  // Default fallback
+                selectedSymbol = "" // fallback if needed
             }
         })
+
+        //coinAdapter = ArrayAdapter(this, R.layout.spinner_item, coinList)
 
         val spinner = findViewById<Spinner>(R.id.spinnerValues)
         val items = arrayOf(3, 5)
@@ -121,6 +129,8 @@ class SplitActivity : AppCompatActivity() {
 
         val recyclerView = findViewById<RecyclerView>(R.id.openOrders)
         recyclerView.layoutManager = LinearLayoutManager(this)
+        val dividerItemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
+        recyclerView.addItemDecoration(dividerItemDecoration)
 
 
         fetchPerpetualCoins()
@@ -215,7 +225,9 @@ class SplitActivity : AppCompatActivity() {
     private fun startPriceUpdates() {
         handler.post(object : Runnable {
             override fun run() {
-                fetchCoinPrice(selectedSymbol)
+                TradeUtils.fetchCoinPrice(selectedSymbol,
+                    { price -> Log.d("FetchCoinPrice", "Price: $price") },
+                    { error -> Log.e("FetchCoinPrice", "Error fetching price: ${error.message}") })
                 handler.postDelayed(this, updateInterval)
             }
         })
@@ -281,51 +293,6 @@ class SplitActivity : AppCompatActivity() {
         }
 
         bybitClient.orderClient.cancelOrder(params, callback)
-    }
-
-    fun fetchCoinPrice(symbol: String) {
-        val client = OkHttpClient()
-
-        // Define the URL and the parameters for the request
-        val url = "https://api-testnet.bybit.com/v5/market/tickers?category=inverse&symbol=$symbol"
-
-        // Build the GET request
-        val request = Request.Builder()
-            .url(url)
-            .build()
-
-        // Execute the request on a background thread to avoid blocking the main UI thread
-        Thread {
-            try {
-                val response: Response = client.newCall(request).execute()
-
-                if (response.isSuccessful) {
-                    // Parse the response JSON
-                    val jsonResponse = JSONObject(response.body?.string() ?: "")
-                    val result = jsonResponse.getJSONObject("result")
-
-                    // Extract information from the response
-                    if (result.length() > 0) {
-                        val ticker = result.getJSONArray("list").getJSONObject(0)
-                        val lastPrice = ticker.getString("lastPrice")
-
-                        // Update UI on the main thread
-                        runOnUiThread {
-                            coinPriceTextView.text = "Price: $lastPrice"
-                        }
-
-                        // Log the result (for debugging)
-                        Log.d("CoinPrice", "Last price for $symbol: $lastPrice")
-                    } else {
-                        Log.d("CoinPrice", "No data available for $symbol.")
-                    }
-                } else {
-                    Log.d("CoinPrice", "Request failed with status code: ${response.code}")
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }.start() // Start the background thread
     }
 
     override fun onDestroy() {
