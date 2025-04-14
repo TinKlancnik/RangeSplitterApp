@@ -1,46 +1,36 @@
+package com.example.rangesplitter
+
+import TradeUtils.fetchOpenOrders
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.TextView
+import android.widget.Toast
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import bybit.sdk.websocket.ByBitWebsocketTopic
-import com.example.rangesplitter.OpenOrdersAdapter
-import com.example.rangesplitter.R
+import bybit.sdk.rest.ByBitRestClient
 
-class OpenOrdersFragment(private val openOrdersList: List<ByBitWebsocketTopic.PrivateTopic.Order>) : RecyclerView.Adapter<OpenOrdersAdapter.OrderViewHolder>() {
+class OpenOrdersFragment : Fragment() {
 
-    // Create a view holder for each item
-    class OrderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val coinNameTextView: TextView = itemView.findViewById(R.id.coinName)
-        val directionTextView: TextView = itemView.findViewById(R.id.direction)
-        val quantityTextView: TextView = itemView.findViewById(R.id.quantity)
-        val triggerPriceTextView: TextView = itemView.findViewById(R.id.triggerPrice)
-        val cancelButton: Button = itemView.findViewById(R.id.cancelButton)
-    }
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var bybitClient: ByBitRestClient
 
-    // Create the view holder and bind data to the views
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OrderViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.fragment_open_orders, parent, false)
-        return OrderViewHolder(view)
-    }
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val view = inflater.inflate(R.layout.fragment_open_orders, container, false)
+        recyclerView = view.findViewById(R.id.openOrdersRecyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-    override fun onBindViewHolder(holder: OrderViewHolder, position: Int) {
-        val order = openOrdersList[position]
+        // Init Bybit client
+        bybitClient = TradeUtils.getByBitClient()
 
-        holder.coinNameTextView.text = order.coinName
-        holder.directionTextView.text = order.direction
-        holder.quantityTextView.text = order.quantity.toString()
-        holder.triggerPriceTextView.text = order.triggerPrice.toString()
+        // Fetch and display open orders
+        fetchOpenOrders(bybitClient, recyclerView)
 
-        // Handle cancel button click
-        holder.cancelButton.setOnClickListener {
-            // Cancel order logic here
-        }
-    }
-
-    override fun getItemCount(): Int {
-        return openOrdersList.size
+        return view
     }
 }

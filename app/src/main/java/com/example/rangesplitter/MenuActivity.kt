@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.viewpager2.widget.ViewPager2
 import bybit.sdk.rest.ByBitRestApiCallback
 import bybit.sdk.rest.ByBitRestClient
 import bybit.sdk.rest.account.WalletBalanceParams
@@ -18,6 +19,9 @@ import bybit.sdk.shared.Category
 import bybit.sdk.shared.OrderType
 import bybit.sdk.shared.Side
 import bybit.sdk.shared.TimeInForce
+import com.example.rangesplitter.UI.ViewPagerAdapter
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.runBlocking
 import kotlin.coroutines.*
 import kotlinx.coroutines.*
@@ -39,6 +43,20 @@ class MenuActivity : AppCompatActivity() {
             val intent = Intent(this, SplitActivity::class.java)
             startActivity(intent)
         }
+
+        val viewPager = findViewById<ViewPager2>(R.id.viewPager)
+        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
+
+        val adapter = ViewPagerAdapter(this)
+        viewPager.adapter = adapter
+
+        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
+            tab.text = when (position) {
+                0 -> "Orders"
+                1 -> "Positions"
+                else -> ""
+            }
+        }.attach()
 
         // Fetch the balance when the activity is created
         fetchAndDisplayBalance()

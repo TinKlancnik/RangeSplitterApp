@@ -46,36 +46,6 @@ object TradeUtils {
         return ByBitRestClient(apiKey, apiSecret, true, httpClientProvider = okHttpClientProvider)
     }
 
-    fun fetchCoinPrice(symbol: String, onResult: (String) -> Unit, onError: (Throwable) -> Unit) {
-        val client = OkHttpClient()
-        val url = "https://api-testnet.bybit.com/v5/market/tickers?category=inverse&symbol=$symbol"
-
-        val request = Request.Builder()
-            .url(url)
-            .build()
-
-        Thread {
-            try {
-                val response: Response = client.newCall(request).execute()
-                if (response.isSuccessful) {
-                    val jsonResponse = JSONObject(response.body?.string() ?: "")
-                    val result = jsonResponse.getJSONObject("result")
-                    if (result.length() > 0) {
-                        val ticker = result.getJSONArray("list").getJSONObject(0)
-                        val lastPrice = ticker.getString("lastPrice")
-                        onResult(lastPrice)
-                    } else {
-                        onError(Exception("No data available for $symbol"))
-                    }
-                } else {
-                    onError(Exception("Request failed with status code: ${response.code}"))
-                }
-            } catch (e: Exception) {
-                onError(e)
-            }
-        }.start()
-    }
-
     fun fetchOpenOrders(
         bybitClient: ByBitRestClient,
         recyclerView: RecyclerView
@@ -96,7 +66,7 @@ object TradeUtils {
 
                 recyclerView.post {
                     val adapter = OpenOrdersAdapter(openOrders) { order ->
-                        cancelOrder(bybitClient, order,
+                        cancelOrder(bybitClient, order, recyclerView,
                             { Log.d("CancelOrder", it) },
                             { Log.e("CancelOrder", it) }
                         )
@@ -118,6 +88,7 @@ object TradeUtils {
     fun cancelOrder(
         bybitClient: ByBitRestClient,
         order: OpenOrder,
+        recyclerView: RecyclerView,
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
@@ -131,6 +102,7 @@ object TradeUtils {
             override fun onSuccess(result: CancelOrderResponse) {
                 Log.d("CancelOrder", "Success: ${result.result.orderId}")
                 onSuccess("Successfully cancelled order: ${order.orderId}")
+                fetchOpenOrders(bybitClient, recyclerView)
             }
 
             override fun onError(error: Throwable) {
