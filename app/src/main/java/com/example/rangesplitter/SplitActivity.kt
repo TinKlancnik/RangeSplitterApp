@@ -52,7 +52,6 @@ class SplitActivity : AppCompatActivity() {
         val orderId: String
     )
 
-
     @SuppressLint("SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

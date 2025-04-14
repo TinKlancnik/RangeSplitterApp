@@ -1,5 +1,6 @@
 package com.example.rangesplitter
 
+import TradeUtils.startPeriodicUpdate
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle

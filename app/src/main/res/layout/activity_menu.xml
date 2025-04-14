@@ -80,6 +80,7 @@
         app:tabIndicatorColor="@color/highlightCTA"
         app:tabSelectedTextColor="@color/textPrimary"
         app:tabTextColor="@color/textMuted"
+        android:background="@android:color/transparent"
         app:layout_constraintTop_toBottomOf="@id/splitButton"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

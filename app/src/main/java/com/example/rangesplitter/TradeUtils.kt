@@ -34,9 +34,25 @@ import okhttp3.Response
 import org.json.JSONObject
 import bybit.sdk.rest.order.OrdersOpenParams
 import bybit.sdk.rest.order.OrdersOpenResponse
+import bybit.sdk.rest.position.ByBitPositionClient
+import bybit.sdk.rest.position.PositionInfoParams
+import bybit.sdk.rest.position.PositionInfoResponse
 import com.example.rangesplitter.OpenOrdersAdapter
 import com.example.rangesplitter.R
 import com.example.rangesplitter.SplitActivity.OpenOrder
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
+data class OpenPosition(
+    val symbol: String,
+    val side: String,
+    val size: String,
+    val avgPrice: String,
+    val leverage: String,
+    val unrealisedPnl: String
+)
+
 
 object TradeUtils {
 
@@ -84,7 +100,6 @@ object TradeUtils {
         bybitClient.orderClient.ordersOpen(params, callback)
     }
 
-
     fun cancelOrder(
         bybitClient: ByBitRestClient,
         order: OpenOrder,
@@ -113,4 +128,102 @@ object TradeUtils {
 
         bybitClient.orderClient.cancelOrder(params, callback)
     }
+
+    fun fetchOpenPositions(
+        bybitClient: ByBitRestClient,
+        recyclerView: RecyclerView
+    ) {
+        val params = PositionInfoParams(category = Category.linear, settleCoin = "USDT")
+
+        val callback = object : ByBitRestApiCallback<PositionInfoResponse> {
+            override fun onSuccess(result: PositionInfoResponse) {
+                val openPositions = result.result.list.map {
+                    OpenPosition(
+                        symbol = it.symbol,
+                        avgPrice = it.avgPrice,
+                        side = it.side.toString(),
+                        leverage = it.leverage,
+                        size = it.size,
+                        unrealisedPnl = it.unrealisedPnl
+                    )
+                }
+
+                recyclerView.post {
+                    val adapter = OpenPositionsAdapter(openPositions) { position ->
+                        // Handle cancel action for the open position
+                        cancelPosition(bybitClient, position, recyclerView,
+                            { Log.d("CancelPosition", it) },
+                            { Log.e("CancelPosition", it) }
+                        )
+                    }
+                    recyclerView.adapter = adapter
+                }
+            }
+
+            override fun onError(error: Throwable) {
+                Log.e("OpenPositions", "Error: ${error.message}")
+            }
+        }
+
+        bybitClient.positionClient.getPositionInfo(params, callback)
+    }
+
+
+    fun startPeriodicUpdate(bybitClient: ByBitRestClient, recyclerView: RecyclerView) {
+        val updateInterval = 5000L // 5 seconds interval
+
+        // Handler to run the task periodically
+        val handler = Handler(Looper.getMainLooper())
+
+        val updateRunnable = object : Runnable {
+            override fun run() {
+                // Fetch the latest open positions
+                fetchOpenPositions(bybitClient, recyclerView)
+
+                // Post the Runnable to run after the specified interval
+                handler.postDelayed(this, updateInterval)
+            }
+        }
+
+        // Start the periodic update
+        handler.post(updateRunnable)
+    }
+
+    fun stopPeriodicUpdate(handler: Handler) {
+        // Remove all callbacks to stop the periodic updates
+        handler.removeCallbacksAndMessages(null)
+    }
+
+
+
+    fun cancelPosition(
+        bybitClient: ByBitRestClient,
+        position: OpenPosition,
+        recyclerView: RecyclerView,
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        // Assuming you have a function to close or reduce positions
+        val params = CancelOrderParams( // Replace this with correct position cancellation logic
+            category = Category.linear,
+            symbol = position.symbol,
+            orderId = "position-close" // This is a placeholder; actual API call may differ
+        )
+
+        val callback = object : ByBitRestApiCallback<CancelOrderResponse> {
+            override fun onSuccess(result: CancelOrderResponse) {
+                Log.d("CancelPosition", "Successfully closed position: ${position.symbol}")
+                onSuccess("Successfully closed position: ${position.symbol}")
+                fetchOpenPositions(bybitClient, recyclerView) // Refresh the open positions
+            }
+
+            override fun onError(error: Throwable) {
+                Log.e("CancelPosition", "Error: ${error.message}")
+                onError("Failed to close position: ${error.message}")
+            }
+        }
+
+        bybitClient.orderClient.cancelOrder(params, callback) // Replace with correct position-related API if needed
+    }
+
 }
