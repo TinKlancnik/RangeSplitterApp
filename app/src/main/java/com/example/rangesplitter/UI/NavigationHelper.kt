@@ -12,18 +12,24 @@ object NavigationHelper {
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> {
-                    if (activity !is MenuActivity)
+                    if (activity !is MenuActivity) {
                         activity.startActivity(Intent(activity, MenuActivity::class.java))
+                        activity.overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
+                    }
                     true
                 }
                 R.id.nav_search -> {
-                    if (activity !is SplitActivity)
+                    if (activity !is SplitActivity) {
                         activity.startActivity(Intent(activity, SplitActivity::class.java))
+                        activity.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+                    }
                     true
                 }
                 R.id.nav_profile -> {
-                    if (activity !is SplitActivity)
+                    if (activity !is SplitActivity) {
                         activity.startActivity(Intent(activity, SplitActivity::class.java))
+                        activity.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+                    }
                     true
                 }
                 else -> false

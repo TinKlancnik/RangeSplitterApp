@@ -20,6 +20,7 @@ import bybit.sdk.shared.Category
 import bybit.sdk.shared.OrderType
 import bybit.sdk.shared.Side
 import bybit.sdk.shared.TimeInForce
+import com.example.rangesplitter.UI.NavigationHelper
 import com.example.rangesplitter.UI.ViewPagerAdapter
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -61,28 +62,7 @@ class MenuActivity : AppCompatActivity() {
         // Fetch the balance when the activity is created
         fetchAndDisplayBalance()
 
-        val bottomNav = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_nav)
-
-        bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_home -> {
-                    val intent = Intent(this, MenuActivity::class.java)
-                    startActivity(intent)
-                    true
-                }
-                R.id.nav_search -> {
-                    val intent = Intent(this, SplitActivity::class.java)
-                    startActivity(intent)
-                    true
-                }
-                R.id.nav_profile -> {
-                    val intent = Intent(this, SplitActivity::class.java)
-                    startActivity(intent)
-                    true
-                }
-                else -> false
-            }
-        }
+        NavigationHelper.setupBottomNav(this, findViewById(R.id.bottom_nav))
 
     }
 
