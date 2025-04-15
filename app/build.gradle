@@ -63,6 +63,7 @@ dependencies {
     // SLF4J (or swap for Log.d)
     implementation "org.slf4j:slf4j-simple:2.0.9"
     implementation 'com.google.ar.sceneform:filament-android:1.17.1'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
 
     // Testing
     testImplementation 'junit:junit:4.13.2'

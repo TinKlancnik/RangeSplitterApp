@@ -6,20 +6,25 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <!-- ViewPager2 for swiping between fragments -->
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/viewPager"
+    <!-- SwipeRefreshLayout to handle pull-to-refresh -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_above="@id/bottom_navigation"
-        android:layout_alignParentTop="true"/>
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_navigation">
 
-    <!-- BottomNavigationView for navigation -->
+        <!-- ViewPager2 for fragment navigation -->
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
+        android:layout_alignParentBottom="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:background="?android:attr/windowBackground"
         app:menu="@menu/bottom_nav_menu" />
 
