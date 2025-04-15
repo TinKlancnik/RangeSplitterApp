@@ -1,5 +1,6 @@
 package com.example.rangesplitter
 
+import OpenOrder
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
@@ -9,8 +10,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class OpenOrdersAdapter(
-    private val orders: List<SplitActivity.OpenOrder>,
-    private val onCancelClick: (SplitActivity.OpenOrder) -> Unit
+    private val orders: List<OpenOrder>,
+    private val onCancelClick: (OpenOrder) -> Unit
 ) : RecyclerView.Adapter<OpenOrdersAdapter.OrderViewHolder>() {
 
     class OrderViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -34,9 +35,8 @@ class OpenOrdersAdapter(
         holder.triggerPrice.text = order.triggerPrice
         holder.quantity.text = order.quantity
 
-        // Optional: color the direction
         holder.direction.setTextColor(
-            if (order.side == "Buy") Color.GREEN else Color.RED
+            if (order.side.equals("Buy", true)) Color.GREEN else Color.RED
         )
 
         holder.cancelButton.setOnClickListener {

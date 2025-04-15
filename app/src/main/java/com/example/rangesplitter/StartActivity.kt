@@ -19,8 +19,9 @@ class StartActivity: AppCompatActivity (){
         val password=findViewById<EditText>(R.id.passwordInput)
 
         loginButton.setOnClickListener{
-            val intent = Intent(this, MenuActivity::class.java)
+            val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
+            finish()
         }
     }
 }

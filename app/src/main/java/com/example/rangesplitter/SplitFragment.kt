@@ -1,18 +1,22 @@
 package com.example.rangesplitter
 
+import OpenOrder
 import android.annotation.SuppressLint
+import android.content.Context.INPUT_METHOD_SERVICE
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -36,7 +40,7 @@ import bybit.sdk.rest.order.OrdersOpenParams
 import bybit.sdk.rest.order.OrdersOpenResponse
 import com.example.rangesplitter.UI.NavigationHelper
 
-class SplitActivity : AppCompatActivity() {
+class SplitFragment : Fragment(R.layout.fragment_split) {
 
     private lateinit var coinAdapter: ArrayAdapter<String>
     private val coinList = mutableListOf<String>()
@@ -45,24 +49,12 @@ class SplitActivity : AppCompatActivity() {
     private val handler = android.os.Handler()
     private lateinit var coinPriceTextView: TextView
 
-    data class OpenOrder(
-        val symbol: String,
-        val triggerPrice:String,
-        val side: String,
-        val quantity: String,
-        val orderId: String
-    )
 
-    @SuppressLint("SuspiciousIndentation")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_split)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        supportActionBar?.hide()
-        window.navigationBarColor = resources.getColor(android.R.color.black)
-
-        val coinSpinner = findViewById<Spinner>(R.id.coinList)
-        coinAdapter = ArrayAdapter(this, R.layout.spinner_item, coinList)
+        val coinSpinner = view.findViewById<Spinner>(R.id.coinList)
+        coinAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, coinList)
         coinAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
         coinSpinner.adapter = coinAdapter
 
@@ -75,34 +67,27 @@ class SplitActivity : AppCompatActivity() {
                 position: Int,
                 id: Long
             ) {
-                if (position == 0) {
-                    // Default option selected (e.g., "Select coin")
-                    selectedSymbol = "BTCUSDT"  // or keep default "BTCUSDT" if you'd like
-                } else {
-                    selectedSymbol = coinList[position]
-                }
+                selectedSymbol = coinList[position]
             }
 
             override fun onNothingSelected(parent: android.widget.AdapterView<*>) {
-                selectedSymbol = "" // fallback if needed
+                selectedSymbol = "BTCUSDT" // fallback symbol
             }
         })
 
-        //coinAdapter = ArrayAdapter(this, R.layout.spinner_item, coinList)
-
-        val spinner = findViewById<Spinner>(R.id.spinnerValues)
+        val spinner = view.findViewById<Spinner>(R.id.spinnerValues)
         val items = arrayOf(3, 5)
-        val adapter = ArrayAdapter(this, R.layout.spinner_item, items)
+        val adapter = ArrayAdapter(requireContext(), R.layout.spinner_item, items)
         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
         spinner.adapter = adapter
         spinner.setSelection(0)
 
-        val rangeTopEditText = findViewById<EditText>(R.id.editTextRangeTop)
-        val rangeLowEditText = findViewById<EditText>(R.id.editTextRangeLow)
-        val amountEditText = findViewById<EditText>(R.id.editTextAmount)
-        val buyButton = findViewById<Button>(R.id.buttonBuy)
-        val sellButton = findViewById<Button>(R.id.buttonSell)
-        coinPriceTextView = findViewById<TextView>(R.id.coinPrice)
+        val rangeTopEditText = view.findViewById<EditText>(R.id.editTextRangeTop)
+        val rangeLowEditText = view.findViewById<EditText>(R.id.editTextRangeLow)
+        val amountEditText = view.findViewById<EditText>(R.id.editTextAmount)
+        val buyButton = view.findViewById<Button>(R.id.buttonBuy)
+        val sellButton = view.findViewById<Button>(R.id.buttonSell)
+        coinPriceTextView = view.findViewById<TextView>(R.id.coinPrice)
 
         buyButton.setOnClickListener {
             val rangeTop = rangeTopEditText.text.toString().toFloatOrNull() ?: 0f
@@ -110,11 +95,12 @@ class SplitActivity : AppCompatActivity() {
             val numberOfValues = spinner.selectedItem as Int
             val results = calculateNumbers(rangeLow, rangeTop, numberOfValues)
             for (result in results) {
-                placeATrade(result.toString(), amountEditText.text.toString(),Side.Buy)
+                placeATrade(result.toString(), amountEditText.text.toString(), Side.Buy)
             }
 
             closekey(it)
         }
+
         sellButton.setOnClickListener {
             val rangeTop = rangeTopEditText.text.toString().toFloatOrNull() ?: 0f
             val rangeLow = rangeLowEditText.text.toString().toFloatOrNull() ?: 0f
@@ -127,12 +113,10 @@ class SplitActivity : AppCompatActivity() {
             closekey(it)
         }
 
-        val recyclerView = findViewById<RecyclerView>(R.id.openOrders)
-        recyclerView.layoutManager = LinearLayoutManager(this)
+        val recyclerView = view.findViewById<RecyclerView>(R.id.openOrders)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
         val dividerItemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(dividerItemDecoration)
-
-        NavigationHelper.setupBottomNav(this, findViewById(R.id.bottom_nav))
 
 
         fetchPerpetualCoins()
@@ -141,7 +125,7 @@ class SplitActivity : AppCompatActivity() {
     }
 
     private fun closekey(view: View) {
-        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        val imm = requireActivity().getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
@@ -156,7 +140,7 @@ class SplitActivity : AppCompatActivity() {
         return ByBitRestClient(apiKey, apiSecret, true, httpClientProvider = okHttpClientProvider)
     }
 
-    private fun placeATrade(price: String,amount: String, side: Side) {
+    private fun placeATrade(price: String, amount: String, side: Side) {
         val bybitClient = getByBitClient()
 
         val tradeParams = PlaceOrderParams(
@@ -189,8 +173,8 @@ class SplitActivity : AppCompatActivity() {
     }
 
     private fun showTradeResultDialog(title: String, message: String) {
-        runOnUiThread {
-            val dialogBuilder = androidx.appcompat.app.AlertDialog.Builder(this)
+        activity?.runOnUiThread {
+            val dialogBuilder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
             dialogBuilder.setTitle(title)
             dialogBuilder.setMessage(message)
             dialogBuilder.setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
@@ -249,13 +233,15 @@ class SplitActivity : AppCompatActivity() {
                     )
                 }
 
-                runOnUiThread {
-                    val adapter = OpenOrdersAdapter(openOrders) { order ->
+                activity?.runOnUiThread {
+                    val adapter = OpenOrdersAdapter(openOrders) { order: OpenOrder ->
                         cancelOrder(order)
                     }
 
-                    findViewById<RecyclerView>(R.id.openOrders).adapter = adapter
+                    // Use the view reference to access RecyclerView in the fragment
+                    view?.findViewById<RecyclerView>(R.id.openOrders)?.adapter = adapter
                 }
+
             }
 
             override fun onError(error: Throwable) {
@@ -278,7 +264,7 @@ class SplitActivity : AppCompatActivity() {
         val callback = object : ByBitRestApiCallback<bybit.sdk.rest.order.CancelOrderResponse> {
             override fun onSuccess(result: bybit.sdk.rest.order.CancelOrderResponse) {
                 Log.d("CancelOrder", "Success: ${result.result.orderId}")
-                runOnUiThread {
+                activity?.runOnUiThread {
                     showTradeResultDialog("Order Cancelled", "Successfully cancelled order: ${order.orderId}")
                     fetchOpenOrders()
                 }
@@ -286,7 +272,7 @@ class SplitActivity : AppCompatActivity() {
 
             override fun onError(error: Throwable) {
                 Log.e("CancelOrder", "Error: ${error.message}")
-                runOnUiThread {
+                activity?.runOnUiThread {
                     showTradeResultDialog("Cancel Failed", "Failed to cancel order: ${error.message}")
                 }
             }
@@ -322,7 +308,7 @@ class SplitActivity : AppCompatActivity() {
                         val lastPrice = ticker.getString("lastPrice")
 
                         // Update UI on the main thread
-                        runOnUiThread {
+                        activity?.runOnUiThread {
                             coinPriceTextView.text = "Price: $lastPrice"
                         }
 
@@ -332,16 +318,11 @@ class SplitActivity : AppCompatActivity() {
                         Log.d("CoinPrice", "No data available for $symbol.")
                     }
                 } else {
-                    Log.d("CoinPrice", "Request failed with status code: ${response.code}")
+                    Log.d("CoinPrice", "Failed to fetch coin price.")
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.d("CoinPrice", "Error: ${e.message}")
             }
-        }.start() // Start the background thread
-    }
-
-    override fun onDestroy() {
-        handler.removeCallbacksAndMessages(null)
-        super.onDestroy()
+        }.start()
     }
 }

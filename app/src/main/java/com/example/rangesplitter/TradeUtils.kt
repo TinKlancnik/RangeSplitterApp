@@ -39,10 +39,17 @@ import bybit.sdk.rest.position.PositionInfoParams
 import bybit.sdk.rest.position.PositionInfoResponse
 import com.example.rangesplitter.OpenOrdersAdapter
 import com.example.rangesplitter.R
-import com.example.rangesplitter.SplitActivity.OpenOrder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+
+data class OpenOrder(
+    val symbol: String,
+    val triggerPrice: String,
+    val side: String,
+    val quantity: String,
+    val orderId: String
+)
 
 data class OpenPosition(
     val symbol: String,
