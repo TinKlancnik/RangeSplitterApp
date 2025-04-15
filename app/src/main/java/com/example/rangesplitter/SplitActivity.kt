@@ -34,6 +34,7 @@ import okhttp3.Response
 import org.json.JSONObject
 import bybit.sdk.rest.order.OrdersOpenParams
 import bybit.sdk.rest.order.OrdersOpenResponse
+import com.example.rangesplitter.UI.NavigationHelper
 
 class SplitActivity : AppCompatActivity() {
 
@@ -55,7 +56,7 @@ class SplitActivity : AppCompatActivity() {
     @SuppressLint("SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_split)
 
         supportActionBar?.hide()
         window.navigationBarColor = resources.getColor(android.R.color.black)
@@ -130,6 +131,8 @@ class SplitActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         val dividerItemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(dividerItemDecoration)
+
+        NavigationHelper.setupBottomNav(this, findViewById(R.id.bottom_nav))
 
 
         fetchPerpetualCoins()

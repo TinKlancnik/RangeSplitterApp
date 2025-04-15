@@ -38,7 +38,6 @@ class MenuActivity : AppCompatActivity() {
 
         balanceTextView = findViewById(R.id.balanceTextView)
         val mainButton = findViewById<Button>(R.id.splitButton)
-        val tradeButton = findViewById<Button>(R.id.trade)
 
         mainButton.setOnClickListener {
             val intent = Intent(this, SplitActivity::class.java)
@@ -61,6 +60,30 @@ class MenuActivity : AppCompatActivity() {
 
         // Fetch the balance when the activity is created
         fetchAndDisplayBalance()
+
+        val bottomNav = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_nav)
+
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_home -> {
+                    val intent = Intent(this, MenuActivity::class.java)
+                    startActivity(intent)
+                    true
+                }
+                R.id.nav_search -> {
+                    val intent = Intent(this, SplitActivity::class.java)
+                    startActivity(intent)
+                    true
+                }
+                R.id.nav_profile -> {
+                    val intent = Intent(this, SplitActivity::class.java)
+                    startActivity(intent)
+                    true
+                }
+                else -> false
+            }
+        }
+
     }
 
     private fun fetchAndDisplayBalance() {
@@ -77,7 +100,14 @@ class MenuActivity : AppCompatActivity() {
                 // Display the balance
                 if (walletBalanceResponse != null) {
                     val totalEquity = walletBalanceResponse.result?.list?.get(0)?.totalEquity
-                    balanceTextView.text = "Total Balance: ${totalEquity} USDT"
+                    Log.d("BalanceType", "totalEquity type: ${totalEquity?.javaClass?.simpleName}")
+                    totalEquity?.toDoubleOrNull()?.let {
+                        // Format it to 2 decimal places
+                        val formattedBalance = String.format("%.2f", it)
+                        balanceTextView.text = "Total Balance: $formattedBalance USDT"
+                    } ?: run {
+                        balanceTextView.text = "Error: Invalid balance format"
+                    }
                 } else {
                     balanceTextView.text = "Error fetching balance"
                 }
