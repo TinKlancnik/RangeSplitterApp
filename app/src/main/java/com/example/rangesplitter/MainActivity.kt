@@ -1,7 +1,9 @@
 package com.example.rangesplitter
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.rangesplitter.UI.NavigationHelper
@@ -15,6 +17,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         setContentView(R.layout.activity_main)
 
         // Find the bottom navigation view, ViewPager2, and SwipeRefreshLayout
@@ -38,6 +41,9 @@ class MainActivity : AppCompatActivity() {
             // Stop the refreshing animation once done
             swipeRefreshLayout.isRefreshing = false
         }
+
+        // Set up Bottom Navigation active item color change
+        setupBottomNavActiveColor()
     }
 
     // This function refreshes the current fragment by notifying ViewPager2 to reload
@@ -47,5 +53,21 @@ class MainActivity : AppCompatActivity() {
 
         // Notify the ViewPager2 to reload the current fragment
         viewPager.adapter?.notifyItemChanged(currentPosition)
+    }
+
+    // This function sets the active color of the BottomNavigationView items
+    private fun setupBottomNavActiveColor() {
+        val activeColor = ContextCompat.getColor(this, R.color.colorActive)  // Active color
+        val inactiveColor = ContextCompat.getColor(this, R.color.colorInactive)  // Inactive color
+
+        bottomNav.itemIconTintList = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(activeColor, inactiveColor)
+        )
+
+        bottomNav.itemTextColor = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(activeColor, inactiveColor)
+        )
     }
 }

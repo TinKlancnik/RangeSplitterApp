@@ -25,8 +25,18 @@ class OpenPositionsAdapter(
             sizeTextView.text = openPosition.size
             avgPriceTextView.text = openPosition.avgPrice
             positionValueTextView.text = openPosition.leverage
+            positionValueTextView.text = "${openPosition.leverage}x"
+
             unrealizedPnlTextView.text = openPosition.unrealisedPnl
+
+            // Convert the PnL string to a Double
+            val pnlValue = openPosition.unrealisedPnl.toDoubleOrNull() ?: 0.0
+
+            // Set text color based on value
+            val colorRes = if (pnlValue >= 0) R.color.vibrant_green else R.color.vibrant_red
+            unrealizedPnlTextView.setTextColor(itemView.context.getColor(colorRes))
         }
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -38,11 +48,6 @@ class OpenPositionsAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val openPosition = openPositions[position]
         holder.bind(openPosition)
-
-        // Handle the cancel button click action
-        holder.itemView.findViewById<Button>(R.id.cancelButton).setOnClickListener {
-            onCancelClick(openPosition)
-        }
     }
 
     override fun getItemCount(): Int = openPositions.size

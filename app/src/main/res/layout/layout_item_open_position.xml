@@ -10,111 +10,106 @@
     android:showDividers="middle"
     android:dividerPadding="8dp">
 
-    <!-- First Row: Coin Name, Direction, Coin Price, TP/SL -->
+    <!-- First Row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:orientation="horizontal">
 
-        <!-- Coin info and Direction -->
+        <!-- Coin name and direction (with leverage below) -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
-            android:orientation="vertical"
-            android:gravity="start">
+            android:orientation="vertical">
 
-            <!-- Coin Name -->
-            <TextView
-                android:id="@+id/coinName"
+            <!-- Coin Name and Direction in one row -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="BTC/USDT"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:textColor="@color/textPrimary" />
+                android:orientation="horizontal">
 
-            <!-- Direction -->
+                <!-- Coin Name -->
+                <TextView
+                    android:id="@+id/coinName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="BTC/USDT"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="@color/textPrimary"
+                    android:layout_marginEnd="8dp" />
+
+                <!-- Direction -->
+                <TextView
+                    android:id="@+id/direction"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Long"
+                    android:textSize="14sp"
+                    android:textColor="@color/vibrant_green" />
+            </LinearLayout>
+
+            <!-- Leverage -->
             <TextView
-                android:id="@+id/direction"
+                android:id="@+id/leverage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Long"
-                android:textSize="14sp"
-                android:textColor="@color/green" />
+                android:text="10x"
+                android:textSize="12sp"
+                android:textColor="@color/textPrimary"
+                android:layout_marginTop="2dp" />
         </LinearLayout>
 
-        <!-- Price and TP/SL Section -->
+        <!-- Unrealized PnL on the far right -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="end"
-            android:layout_weight="1">
+            android:layout_gravity="center_vertical">
 
-            <!-- TP/SL -->
+            <!-- Label -->
             <TextView
-                android:id="@+id/tpSl"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="TP/SL"
-                android:textColor="@color/textPrimary"
-                android:textSize="14sp" />
+                android:text="Unrealized P&amp;L"
+                android:textColor="@color/textMuted"
+                android:textSize="10sp" />
+
+            <!-- PnL value -->
+            <TextView
+                android:id="@+id/unrealizedPnl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="150.0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/textPrimary" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Second Row for Quantity and Average Price -->
+    <!-- Second Row: Avg. Price and Size (Quantity) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:layout_marginTop="12dp">
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
 
-        <!-- Quantity Section -->
+        <!-- Avg. Price -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="0.5"
+            android:layout_weight="1"
             android:orientation="vertical">
 
-            <!-- Label -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:text="Quantity"
+                android:text="Entry Price"
                 android:textColor="@color/textMuted"
-                android:textSize="12sp" />
+                android:textSize="10sp" />
 
-            <!-- Quantity -->
-            <TextView
-                android:id="@+id/quantity"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0.05"
-                android:textColor="@color/textPrimary"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-        <!-- Average Price Section -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.5"
-            android:orientation="vertical">
-
-            <!-- Label -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:text="Avg. Price"
-                android:textColor="@color/textMuted"
-                android:textSize="12sp" />
-
-            <!-- Average Price -->
             <TextView
                 android:id="@+id/avgPrice"
                 android:layout_width="wrap_content"
@@ -123,83 +118,29 @@
                 android:textColor="@color/textPrimary"
                 android:textSize="14sp" />
         </LinearLayout>
-    </LinearLayout>
 
-    <!-- Third Row for Unrealized PnL and Leverage -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:layout_marginTop="12dp">
-
-        <!-- Unrealized PnL Section -->
+        <!-- Size / Quantity -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="0.5"
+            android:layout_weight="1"
             android:orientation="vertical">
 
-            <!-- Label -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:text="Unrealized PnL"
+                android:text="Size"
                 android:textColor="@color/textMuted"
-                android:textSize="12sp" />
+                android:textSize="10sp" />
 
-            <!-- Unrealized PnL -->
             <TextView
-                android:id="@+id/unrealizedPnl"
+                android:id="@+id/quantity"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="150.0"
-                android:textColor="@color/textPrimary"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-        <!-- Leverage Section -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.5"
-            android:orientation="vertical">
-
-            <!-- Label -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:text="Leverage"
-                android:textColor="@color/textMuted"
-                android:textSize="12sp" />
-
-            <!-- Leverage -->
-            <TextView
-                android:id="@+id/leverage"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="10x"
+                android:text="0.05"
                 android:textColor="@color/textPrimary"
                 android:textSize="14sp" />
         </LinearLayout>
     </LinearLayout>
-
-    <!-- Cancel Button -->
-    <Button
-        android:id="@+id/cancelButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/red"
-        android:minWidth="0dp"
-        android:minHeight="0dp"
-        android:layout_marginTop="12dp"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="6dp"
-        android:stateListAnimator="@null"
-        android:text="Cancel"
-        android:textColor="@color/white"
-        android:textSize="12sp" />
 
 </LinearLayout>

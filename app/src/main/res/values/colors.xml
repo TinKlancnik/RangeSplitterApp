@@ -23,4 +23,9 @@
     <color name="buttonHover">#4A6B8C</color>
     <color name="buttonPressed">#2F4D66</color>
     <color name="buttonTextColor">#EAEDED</color>
+
+    <color name="colorActive">#00C9A7</color>
+    <color name="colorInactive">#AAB7B8</color>
+    <color name="vibrant_green">#1db31d</color>
+    <color name="vibrant_red">#c41f0c</color>
 </resources>
