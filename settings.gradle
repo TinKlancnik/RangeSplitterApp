@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "RangeSplitter"
 include ':app'
+include(":lightweightcharts")

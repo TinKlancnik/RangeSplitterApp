@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import bybit.sdk.rest.ByBitRestApiCallback
 import bybit.sdk.rest.ByBitRestClient
+import bybit.sdk.rest.account.WalletBalanceParams
 import bybit.sdk.rest.market.InstrumentsInfoParams
 import bybit.sdk.rest.market.InstrumentsInfoResponse
 import bybit.sdk.rest.market.InstrumentsInfoResultItem
@@ -42,6 +43,10 @@ import com.example.rangesplitter.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import bybit.sdk.rest.market.KLineParams
+import bybit.sdk.rest.market.KLineResponse
+import bybit.sdk.shared.AccountType
+import kotlinx.coroutines.withContext
 
 data class OpenOrder(
     val symbol: String,
@@ -59,7 +64,13 @@ data class OpenPosition(
     val leverage: String,
     val unrealisedPnl: String
 )
-
+data class Candle(
+    val time: Long,
+    val open: Float,
+    val high: Float,
+    val low: Float,
+    val close: Float
+)
 
 object TradeUtils {
 
@@ -144,6 +155,7 @@ object TradeUtils {
 
         val callback = object : ByBitRestApiCallback<PositionInfoResponse> {
             override fun onSuccess(result: PositionInfoResponse) {
+                // Map the result to a list of OpenPosition objects
                 val openPositions = result.result.list.map {
                     OpenPosition(
                         symbol = it.symbol,
@@ -155,14 +167,10 @@ object TradeUtils {
                     )
                 }
 
+                // Update the RecyclerView with the fetched open positions
                 recyclerView.post {
-                    val adapter = OpenPositionsAdapter(openPositions) { position ->
-                        // Handle cancel action for the open position
-                        cancelPosition(bybitClient, position, recyclerView,
-                            { Log.d("CancelPosition", it) },
-                            { Log.e("CancelPosition", it) }
-                        )
-                    }
+                    // You should define an adapter for OpenPositions
+                    val adapter = OpenPositionsAdapter(openPositions)
                     recyclerView.adapter = adapter
                 }
             }
@@ -201,36 +209,101 @@ object TradeUtils {
         handler.removeCallbacksAndMessages(null)
     }
 
-
-
-    fun cancelPosition(
+    fun fetchKlines(
         bybitClient: ByBitRestClient,
-        position: OpenPosition,
-        recyclerView: RecyclerView,
-        onSuccess: (String) -> Unit,
-        onError: (String) -> Unit
+        symbol: String,
+        interval: String = "15",
+        limit: Int = 100,
+        onSuccess: (List<Candle>) -> Unit,
+        onError: (Throwable) -> Unit
     ) {
-        // Assuming you have a function to close or reduce positions
-        val params = CancelOrderParams( // Replace this with correct position cancellation logic
+        Log.d("KlineFetch", "Fetching klines: symbol=$symbol, interval=$interval, limit=$limit")
+
+        val params = KLineParams(
             category = Category.linear,
-            symbol = position.symbol,
-            orderId = "position-close" // This is a placeholder; actual API call may differ
+            symbol = symbol,
+            interval = interval,
+            limit = limit
         )
 
-        val callback = object : ByBitRestApiCallback<CancelOrderResponse> {
-            override fun onSuccess(result: CancelOrderResponse) {
-                Log.d("CancelPosition", "Successfully closed position: ${position.symbol}")
-                onSuccess("Successfully closed position: ${position.symbol}")
-                fetchOpenPositions(bybitClient, recyclerView) // Refresh the open positions
+        val callback = object : ByBitRestApiCallback<KLineResponse> {
+            override fun onSuccess(result: KLineResponse) {
+                Log.d("KlineFetch", "API response success")
+
+                if (result.result.list.isNullOrEmpty()) {
+                    Log.w("KlineFetch", "Kline response is empty")
+                }
+
+                val candles = result.result.list.map { item ->
+                    Log.d("KlineFetch", "Raw item: $item")
+                    Candle(
+                        time = item[0].toLong() / 1000,
+                        open = item[1].toFloat(),
+                        high = item[2].toFloat(),
+                        low = item[3].toFloat(),
+                        close = item[4].toFloat()
+                    )
+                }
+
+                Log.d("KlineFetch", "Parsed ${candles.size} candles")
+                onSuccess(candles)
             }
 
             override fun onError(error: Throwable) {
-                Log.e("CancelPosition", "Error: ${error.message}")
-                onError("Failed to close position: ${error.message}")
+                Log.e("KlineFetch", "Error fetching klines: ${error.message}", error)
+                onError(error)
             }
         }
 
-        bybitClient.orderClient.cancelOrder(params, callback) // Replace with correct position-related API if needed
+        try {
+            bybitClient.marketClient.getKline(params, callback)
+        } catch (e: Exception) {
+            Log.e("KlineFetch", "Exception while fetching klines", e)
+            onError(e)
+        }
+    }
+
+    object TradeUtils {
+        fun fetchBalance(onResult: (String) -> Unit) {
+            val apiKey = "UV6R9A3gNuk9vl0vVQ"
+            val apiSecret = "vRdpemzToMITR53ftZSM3ar7kSdx6NeodJTn"
+
+            val bybitClient = ByBitRestClient(apiKey, apiSecret, true, httpClientProvider = okHttpClientProvider)
+
+            CoroutineScope(Dispatchers.IO).launch {
+                val walletBalanceResponse = bybitClient.accountClient.getWalletBalanceBlocking(
+                    WalletBalanceParams(AccountType.UNIFIED, listOf("BTC"))
+                )
+                val totalEquity = walletBalanceResponse.result?.list?.get(0)?.totalEquity
+                val formattedBalance = totalEquity?.toDoubleOrNull()?.let {
+                    String.format("%.2f", it)
+                } ?: "Error"
+
+                withContext(Dispatchers.Main) {
+                    onResult(formattedBalance)
+                }
+            }
+        }
+    }
+    fun fetchBalance(onResult: (String) -> Unit) {
+        val apiKey = "UV6R9A3gNuk9vl0vVQ"
+        val apiSecret = "vRdpemzToMITR53ftZSM3ar7kSdx6NeodJTn"
+
+        val bybitClient = ByBitRestClient(apiKey, apiSecret, true, httpClientProvider = okHttpClientProvider)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val walletBalanceResponse = bybitClient.accountClient.getWalletBalanceBlocking(
+                WalletBalanceParams(AccountType.UNIFIED, listOf("BTC"))
+            )
+            val totalEquity = walletBalanceResponse.result?.list?.get(0)?.totalEquity
+            val formattedBalance = totalEquity?.toDoubleOrNull()?.let {
+                String.format("%.2f", it)
+            } ?: "Error"
+
+            withContext(Dispatchers.Main) {
+                onResult(formattedBalance)
+            }
+        }
     }
 
 }

@@ -8,7 +8,6 @@ import com.example.rangesplitter.R
 
 class OpenPositionsAdapter(
     private val openPositions: List<OpenPosition>,
-    private val onCancelClick: (OpenPosition) -> Unit // Add this second parameter
 ) : RecyclerView.Adapter<OpenPositionsAdapter.ViewHolder>() {
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -24,9 +23,7 @@ class OpenPositionsAdapter(
             sideTextView.text = openPosition.side
             sizeTextView.text = openPosition.size
             avgPriceTextView.text = openPosition.avgPrice
-            positionValueTextView.text = openPosition.leverage
             positionValueTextView.text = "${openPosition.leverage}x"
-
             unrealizedPnlTextView.text = openPosition.unrealisedPnl
 
             // Convert the PnL string to a Double
@@ -36,7 +33,6 @@ class OpenPositionsAdapter(
             val colorRes = if (pnlValue >= 0) R.color.vibrant_green else R.color.vibrant_red
             unrealizedPnlTextView.setTextColor(itemView.context.getColor(colorRes))
         }
-
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

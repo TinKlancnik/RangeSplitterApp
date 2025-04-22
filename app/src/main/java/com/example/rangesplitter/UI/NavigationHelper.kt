@@ -23,8 +23,8 @@ object NavigationHelper {
         bottomNav.setOnItemSelectedListener { item ->
             val position = when (item.itemId) {
                 R.id.nav_home -> 0 // MenuFragment
-                R.id.nav_search -> 1 // SplitFragment
-                R.id.nav_profile -> 0 // MenuFragment (or another fragment if needed)
+                R.id.nav_trade -> 1 // SplitFragment
+                R.id.nav_chart -> 2 // MenuFragment (or another fragment if needed)
                 else -> 0 // Default to MenuFragment
             }
             viewPager.currentItem = position
@@ -37,7 +37,8 @@ object NavigationHelper {
                 super.onPageSelected(position)
                 val itemId = when (position) {
                     0 -> R.id.nav_home
-                    1 -> R.id.nav_search
+                    1 -> R.id.nav_trade
+                    2 -> R.id.nav_chart
                     else -> R.id.nav_home
                 }
                 bottomNav.selectedItemId = itemId

@@ -41,7 +41,7 @@
                 android:layout_height="wrap_content"
                 android:text="Long"
                 android:textSize="14sp"
-                android:textColor="@color/green" />
+                android:textColor="@color/vibrant_green" />
         </LinearLayout>
 
         <!-- Coin Price and TP/SL Section -->
