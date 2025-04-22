@@ -5,8 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/primary"
-    tools:context=".SplitActivity">
+    android:background="@color/primary">
 
     <!-- Coin Dropdown and Price -->
     <Spinner
@@ -57,11 +56,15 @@
             android:layout_height="match_parent"
             android:layout_weight="1" />
 
-        <Spinner
-            android:id="@+id/spinnerValues2"
+
+        <EditText
+            android:id="@+id/risk"
+            style="@style/CustomEditTextStyle"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:hint="Total Risk %"
+            android:textSize="14dp"/>
     </LinearLayout>
 
     <!-- Inputs -->
@@ -99,16 +102,15 @@
         app:layout_constraintTop_toBottomOf="@id/editTextRangeLow" />
 
     <!-- Action Buttons -->
+
     <Button
-        android:id="@+id/calculateButton"
-        android:layout_width="0dp"
+        android:id="@+id/setSlTpButton"
+        android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="24dp"
-        android:backgroundTint="@color/buttonDefault"
-        android:text="Calculate"
+        android:layout_margin="24dp"
+        android:layout_marginTop="10dp"
+        android:backgroundTint="@color/black"
+        android:text="Set SL / TP"
         android:textColor="@color/buttonTextColor"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -119,12 +121,12 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="4dp"
         android:gravity="center"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/calculateButton">
+        app:layout_constraintTop_toBottomOf="@+id/setSlTpButton">
 
         <Button
             android:id="@+id/buttonBuy"

@@ -16,6 +16,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -39,6 +40,7 @@ import org.json.JSONObject
 import bybit.sdk.rest.order.OrdersOpenParams
 import bybit.sdk.rest.order.OrdersOpenResponse
 import com.example.rangesplitter.UI.NavigationHelper
+import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class SplitFragment : Fragment(R.layout.fragment_split) {
 
@@ -48,6 +50,9 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
     private val updateInterval: Long = 500  // Update every 3 seconds
     private val handler = android.os.Handler()
     private lateinit var coinPriceTextView: TextView
+    private var totalBalance=""
+    private var stopLoss: String? = null
+    private var takeProfit: String? = null
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -77,6 +82,8 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
 
         val spinner = view.findViewById<Spinner>(R.id.spinnerValues)
         val items = arrayOf(3, 5)
+
+
         val adapter = ArrayAdapter(requireContext(), R.layout.spinner_item, items)
         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
         spinner.adapter = adapter
@@ -100,7 +107,6 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
 
             closekey(it)
         }
-
         sellButton.setOnClickListener {
             val rangeTop = rangeTopEditText.text.toString().toFloatOrNull() ?: 0f
             val rangeLow = rangeLowEditText.text.toString().toFloatOrNull() ?: 0f
@@ -118,10 +124,48 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         val dividerItemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(dividerItemDecoration)
 
+        TradeUtils.fetchBalance { balance ->
+            totalBalance=balance
+        }
+
+        val risk=view.findViewById<TextView>(R.id.risk)
+
+        view.findViewById<Button>(R.id.setSlTpButton).setOnClickListener {
+            showSlTpDialog()
+        }
+
 
         fetchPerpetualCoins()
         startPriceUpdates()
         fetchOpenOrders()
+    }
+
+    private fun showSlTpDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.sl_tp_dialog, null)
+        val slInput = dialogView.findViewById<EditText>(R.id.editTextSL)
+        val tpInput = dialogView.findViewById<EditText>(R.id.editTextTP)
+        val applyBtn = dialogView.findViewById<Button>(R.id.applyButton)
+
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(dialogView)
+        dialog.show()
+
+        applyBtn.setOnClickListener {
+            val slValue = slInput.text.toString().trim()
+            val tpValue = tpInput.text.toString().trim()
+
+            stopLoss = if (slValue.isNotEmpty()) slValue else null
+            takeProfit = if (tpValue.isNotEmpty()) tpValue else null
+
+            // You can also show a Toast for feedback if you want
+            Toast.makeText(
+                requireContext(),
+                "SL: ${stopLoss ?: "Not set"} | TP: ${takeProfit ?: "Not set"}",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            dialog.dismiss()
+        }
     }
 
     private fun closekey(view: View) {
