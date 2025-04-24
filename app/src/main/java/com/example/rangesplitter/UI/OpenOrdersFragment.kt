@@ -1,6 +1,6 @@
 package com.example.rangesplitter
 
-import TradeUtils.fetchOpenOrders
+
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,11 +12,11 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import bybit.sdk.rest.ByBitRestClient
+import com.example.rangesplitter.TradeUtils.fetchOpenOrders
 
 class OpenOrdersFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var bybitClient: ByBitRestClient
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -27,11 +27,8 @@ class OpenOrdersFragment : Fragment() {
         recyclerView = view.findViewById(R.id.openOrdersRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        // Init Bybit client
-        bybitClient = TradeUtils.getByBitClient()
-
         // Fetch and display open orders
-        fetchOpenOrders(bybitClient, recyclerView)
+        fetchOpenOrders(recyclerView)
 
         val dividerItemDecoration = DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL)
         val dividerDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.divider)

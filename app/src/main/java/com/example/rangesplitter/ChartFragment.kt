@@ -17,6 +17,7 @@ import com.tradingview.lightweightcharts.runtime.plugins.DateTimeFormat
 import com.tradingview.lightweightcharts.runtime.plugins.PriceFormatter
 import com.tradingview.lightweightcharts.runtime.plugins.TimeFormatter
 import com.tradingview.lightweightcharts.view.ChartsView
+import com.example.rangesplitter.TradeUtils.fetchKlines
 
 class ChartFragment : Fragment() {
 
@@ -48,16 +49,15 @@ class ChartFragment : Fragment() {
             }
         }
 
-        // Add candlestick series and use test data
+        // Add candlestick series and fetch data
         chartView.api.addCandlestickSeries { series ->
             candlestickSeries = series
 
-            val client = TradeUtils.getByBitClient()
+            val client = BybitClientManager.createClient()
 
-            TradeUtils.fetchKlines(
-                bybitClient = client,
+            fetchKlines(
                 symbol = "BTCUSDT",
-                interval = "15", // You can use "1", "5", "15", "60", etc.
+                interval = "15",
                 limit = 100,
                 onSuccess = { candles ->
                     val data = candles.map {
@@ -79,7 +79,6 @@ class ChartFragment : Fragment() {
                         candlestickSeries?.setData(data)
                         chartView.api.timeScale.scrollToRealTime()
                     }
-
                 },
                 onError = {
                     Log.e("ChartFragment", "Failed to load candle data: ${it.message}", it)

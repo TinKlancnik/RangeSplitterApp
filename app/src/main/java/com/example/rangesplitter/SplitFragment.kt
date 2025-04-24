@@ -1,6 +1,5 @@
 package com.example.rangesplitter
 
-import OpenOrder
 import android.annotation.SuppressLint
 import android.content.Context.INPUT_METHOD_SERVICE
 import android.os.Bundle
@@ -91,29 +90,61 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
 
         val rangeTopEditText = view.findViewById<EditText>(R.id.editTextRangeTop)
         val rangeLowEditText = view.findViewById<EditText>(R.id.editTextRangeLow)
-        val amountEditText = view.findViewById<EditText>(R.id.editTextAmount)
         val buyButton = view.findViewById<Button>(R.id.buttonBuy)
         val sellButton = view.findViewById<Button>(R.id.buttonSell)
         coinPriceTextView = view.findViewById<TextView>(R.id.coinPrice)
 
+        TradeUtils.fetchBalance { balance ->
+            totalBalance=balance
+
+            Log.d("SplitFragment", "Fetched balance: $totalBalance")
+        }
+
+        view.findViewById<Button>(R.id.setSlTpButton).setOnClickListener {
+            showSlTpDialog()
+        }
+
         buyButton.setOnClickListener {
+            val risk = view.findViewById<TextView>(R.id.risk).text.toString()
+            Log.d("SplitFragment", "risk: $risk")
             val rangeTop = rangeTopEditText.text.toString().toFloatOrNull() ?: 0f
             val rangeLow = rangeLowEditText.text.toString().toFloatOrNull() ?: 0f
-            val numberOfValues = spinner.selectedItem as Int
-            val results = calculateNumbers(rangeLow, rangeTop, numberOfValues)
-            for (result in results) {
-                placeATrade(result.toString(), amountEditText.text.toString(), Side.Buy)
-            }
+            val numberOfValues = spinner.selectedItem.toString().toIntOrNull() ?: 0
+            val sl = stopLoss?.toFloatOrNull()
+            Log.d("SplitFragment", "rangeTop: $rangeTop")
+            Log.d("SplitFragment", "rangeLow: $rangeLow")
+            Log.d("SplitFragment", "numberOfValues: $numberOfValues")
+            Log.d("SplitFragment", "sl: $sl")
 
-            closekey(it)
+            if (sl != null && totalBalance.isNotEmpty()) {
+                val positionData = calculatePositionSizes(
+                    top = rangeTop,
+                    low = rangeLow,
+                    sl = sl,
+                    totalBalance = totalBalance.toFloat(),
+                    numberOfBids = numberOfValues,
+                    totalRiskPercent = risk.toFloatOrNull() ?: 0f
+                )
+
+                for ((price, amount) in positionData) {
+                    val intAmount = amount.toInt()
+                    Log.d("SplitFragment", "amount: $intAmount")
+                    placeATrade(price.toString(), intAmount.toString(), Side.Buy)
+                }
+
+                closekey(it)
+            } else {
+                Toast.makeText(requireContext(), "Set a valid Stop Loss and wait for balance", Toast.LENGTH_SHORT).show()
+            }
         }
+
         sellButton.setOnClickListener {
             val rangeTop = rangeTopEditText.text.toString().toFloatOrNull() ?: 0f
             val rangeLow = rangeLowEditText.text.toString().toFloatOrNull() ?: 0f
             val numberOfValues = spinner.selectedItem as Int
             val results = calculateNumbers(rangeLow, rangeTop, numberOfValues)
             for (result in results) {
-                placeATrade(result.toString(), amountEditText.text.toString(), Side.Sell)
+                //placeATrade(result.toString(), amountEditText.text.toString(), Side.Sell)
             }
 
             closekey(it)
@@ -123,16 +154,6 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         val dividerItemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(dividerItemDecoration)
-
-        TradeUtils.fetchBalance { balance ->
-            totalBalance=balance
-        }
-
-        val risk=view.findViewById<TextView>(R.id.risk)
-
-        view.findViewById<Button>(R.id.setSlTpButton).setOnClickListener {
-            showSlTpDialog()
-        }
 
 
         fetchPerpetualCoins()
@@ -157,16 +178,35 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
             stopLoss = if (slValue.isNotEmpty()) slValue else null
             takeProfit = if (tpValue.isNotEmpty()) tpValue else null
 
-            // You can also show a Toast for feedback if you want
+
             Toast.makeText(
                 requireContext(),
-                "SL: ${stopLoss ?: "Not set"} | TP: ${takeProfit ?: "Not set"}",
+                "SL set: ${stopLoss ?: "Not set"} | TP set: ${takeProfit ?: "Not set"}",
                 Toast.LENGTH_SHORT
             ).show()
 
             dialog.dismiss()
         }
     }
+
+    private fun calculatePositionSizes(
+        top: Float,
+        low: Float,
+        sl: Float,
+        totalBalance: Float,
+        numberOfBids: Int,
+        totalRiskPercent: Float
+    ): List<Pair<Float, Float>> {
+        val riskPerBid = (totalBalance * (totalRiskPercent / 100f)) / numberOfBids
+        val bidPrices = calculateNumbers(low, top, numberOfBids)
+
+        return bidPrices.map { price ->
+            val risk = kotlin.math.abs(price - sl)
+            val positionSize = if (risk > 0) riskPerBid / risk else 0f
+            Pair(price, positionSize)
+        }
+    }
+
 
     private fun closekey(view: View) {
         val imm = requireActivity().getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
@@ -194,6 +234,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
             orderType = OrderType.Limit,
             price = price,
             qty = amount,
+            stopLoss= stopLoss,
             timeInForce = TimeInForce.GTC,
             reduceOnly = false
         )

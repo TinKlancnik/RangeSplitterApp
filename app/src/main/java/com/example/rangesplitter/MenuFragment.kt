@@ -1,6 +1,6 @@
 package com.example.rangesplitter
 
-import TradeUtils
+import com.example.rangesplitter.TradeUtils
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.View
