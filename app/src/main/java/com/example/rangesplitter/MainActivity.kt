@@ -28,21 +28,25 @@ class MainActivity : AppCompatActivity() {
         // Set up the bottom navigation and ViewPager2
         NavigationHelper.setupBottomNav(this, bottomNav, viewPager)
 
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+
+                // Disable swipe refresh if ChartFragment is selected (replace 1 with its actual index)
+                swipeRefreshLayout.isEnabled = position != 2
+            }
+        })
+
         // Explicitly set the initial fragment if needed
         if (savedInstanceState == null) {
             viewPager.currentItem = 0 // Set initial fragment (MenuFragment)
         }
 
-        // Set up swipe-to-refresh
         swipeRefreshLayout.setOnRefreshListener {
-            // Call the method to refresh the current fragment
             refreshCurrentFragment()
-
-            // Stop the refreshing animation once done
             swipeRefreshLayout.isRefreshing = false
         }
 
-        // Set up Bottom Navigation active item color change
         setupBottomNavActiveColor()
     }
 

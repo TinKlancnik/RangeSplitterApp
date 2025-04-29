@@ -42,6 +42,8 @@ object NavigationHelper {
                     else -> R.id.nav_home
                 }
                 bottomNav.selectedItemId = itemId
+
+                viewPager.isUserInputEnabled = position != 2
             }
         })
     }

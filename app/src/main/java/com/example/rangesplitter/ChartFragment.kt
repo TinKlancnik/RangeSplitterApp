@@ -18,6 +18,8 @@ import com.tradingview.lightweightcharts.runtime.plugins.PriceFormatter
 import com.tradingview.lightweightcharts.runtime.plugins.TimeFormatter
 import com.tradingview.lightweightcharts.view.ChartsView
 import com.example.rangesplitter.TradeUtils.fetchKlines
+import com.tradingview.lightweightcharts.api.options.models.HandleScaleOptions
+import com.tradingview.lightweightcharts.api.options.models.HandleScrollOptions
 
 class ChartFragment : Fragment() {
 
@@ -38,27 +40,43 @@ class ChartFragment : Fragment() {
         }
 
         // Chart styling
-        chartView.api.applyOptions {
-            layout = LayoutOptions().apply {
-                textColor = Color.BLACK.toIntColor()
-            }
-            localization = LocalizationOptions().apply {
-                locale = "en-US"
-                priceFormatter = PriceFormatter("{price:#2}$")
-                timeFormatter = TimeFormatter("en-US", DateTimeFormat.DATE_TIME)
-            }
+        val layoutOptions = LayoutOptions().apply {
+            textColor = Color.BLACK.toIntColor()
         }
+
+        val localizationOptions = LocalizationOptions().apply {
+            locale = "en-US"
+            priceFormatter = PriceFormatter("{price:#2}$")
+            timeFormatter = TimeFormatter("en-US", DateTimeFormat.DATE_TIME)
+        }
+
+// Instead of trying to modify chartView.api.timeScale inside applyOptions, do this:
+        val options = com.tradingview.lightweightcharts.api.options.models.ChartOptions().apply {
+            layout = layoutOptions
+            localization = localizationOptions
+            timeScale = com.tradingview.lightweightcharts.api.options.models.TimeScaleOptions().apply {
+                fixLeftEdge = false
+                lockVisibleTimeRangeOnResize = false
+                rightBarStaysOnScroll = true
+            }
+            handleScroll = HandleScrollOptions(true) // ✅ Correct way
+            handleScale = HandleScaleOptions(true, true)
+        }
+
+// Then apply the whole options object
+        chartView.api.applyOptions(options)
+
+
 
         // Add candlestick series and fetch data
         chartView.api.addCandlestickSeries { series ->
             candlestickSeries = series
 
-            val client = BybitClientManager.createClient()
 
             fetchKlines(
                 symbol = "BTCUSDT",
                 interval = "15",
-                limit = 100,
+                limit = 1000,
                 onSuccess = { candles ->
                     val data = candles.map {
                         CandlestickData(
@@ -68,7 +86,7 @@ class ChartFragment : Fragment() {
                             low = it.low,
                             close = it.close
                         )
-                    }.sortedBy { it.time.toString().toLong() }
+                    }.sortedBy { (it.time as Time.Utc).timestamp }
 
                     Log.d("ChartFragment", "Candles ready: ${data.size}")
                     data.forEachIndexed { i, c ->
@@ -77,7 +95,6 @@ class ChartFragment : Fragment() {
 
                     activity?.runOnUiThread {
                         candlestickSeries?.setData(data)
-                        chartView.api.timeScale.scrollToRealTime()
                     }
                 },
                 onError = {
