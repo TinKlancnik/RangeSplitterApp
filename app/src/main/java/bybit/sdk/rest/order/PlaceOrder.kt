@@ -29,6 +29,7 @@ suspend fun ByBitOrderClient.placeOrder(
         params.orderLinkId?.let { parameters["orderLinkId"] = it }
         params.reduceOnly?.let { parameters["reduceOnly"] = it.toString() }
         params.stopLoss?.let { parameters["stopLoss"] = it }
+        params.takeProfit?.let { parameters["takeProfit"] = it }
     }, HttpMethod.Post, false)
 
 
@@ -43,7 +44,8 @@ data class PlaceOrderParams(
     val price: String? = null,
     val timeInForce: TimeInForce? = null,
     val orderLinkId: String? = null,
-    val stopLoss: String?
+    val stopLoss: String?,
+    val takeProfit: String?
 )
 
 @Serializable

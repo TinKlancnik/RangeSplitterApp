@@ -1,14 +1,12 @@
 package com.example.rangesplitter
 
-import android.annotation.SuppressLint
+
 import android.content.Context.INPUT_METHOD_SERVICE
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -20,6 +18,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import bybit.sdk.rest.APIResponseV5
 import bybit.sdk.rest.ByBitRestApiCallback
 import bybit.sdk.rest.ByBitRestClient
 import bybit.sdk.rest.market.InstrumentsInfoParams
@@ -38,15 +37,15 @@ import okhttp3.Response
 import org.json.JSONObject
 import bybit.sdk.rest.order.OrdersOpenParams
 import bybit.sdk.rest.order.OrdersOpenResponse
-import com.example.rangesplitter.UI.NavigationHelper
+import bybit.sdk.rest.position.LeverageParams
 import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class SplitFragment : Fragment(R.layout.fragment_split) {
 
     private lateinit var coinAdapter: ArrayAdapter<String>
     private val coinList = mutableListOf<String>()
-    private var selectedSymbol: String = "BTCUSDT"  // Default symbol
-    private val updateInterval: Long = 500  // Update every 3 seconds
+    private var selectedSymbol: String = "BTCUSDT"
+    private val updateInterval: Long = 500
     private val handler = android.os.Handler()
     private lateinit var coinPriceTextView: TextView
     private var totalBalance=""
@@ -139,15 +138,31 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         }
 
         sellButton.setOnClickListener {
+            val risk = view.findViewById<TextView>(R.id.risk).text.toString()
             val rangeTop = rangeTopEditText.text.toString().toFloatOrNull() ?: 0f
             val rangeLow = rangeLowEditText.text.toString().toFloatOrNull() ?: 0f
-            val numberOfValues = spinner.selectedItem as Int
-            val results = calculateNumbers(rangeLow, rangeTop, numberOfValues)
-            for (result in results) {
-                //placeATrade(result.toString(), amountEditText.text.toString(), Side.Sell)
-            }
+            val numberOfValues = spinner.selectedItem.toString().toIntOrNull() ?: 0
+            val sl = stopLoss?.toFloatOrNull()
 
-            closekey(it)
+            if (sl != null && totalBalance.isNotEmpty()) {
+                val positionData = calculatePositionSizes(
+                    top = rangeTop,
+                    low = rangeLow,
+                    sl = sl,
+                    totalBalance = totalBalance.toFloat(),
+                    numberOfBids = numberOfValues,
+                    totalRiskPercent = risk.toFloatOrNull() ?: 0f
+                )
+
+                for ((price, amount) in positionData) {
+                    val intAmount = amount.toInt()
+                    placeATrade(price.toString(), intAmount.toString(), Side.Sell)
+                }
+
+                closekey(it)
+            } else {
+                Toast.makeText(requireContext(), "Set a valid Stop Loss and wait for balance", Toast.LENGTH_SHORT).show()
+            }
         }
 
         val recyclerView = view.findViewById<RecyclerView>(R.id.openOrders)
@@ -189,6 +204,41 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         }
     }
 
+    private fun leverage(midBid: Float, sl: Float) {
+        // Calculate SL % using the formula
+        val slPercentage = ((midBid - sl) / midBid) * 100
+
+        // Log the result
+        Log.d("leverage", "Mid bid: $midBid, SL: $sl, SL Percentage: $slPercentage%")
+
+        if (slPercentage>5)
+        {
+            val multiplier = (50 / slPercentage).toInt()
+            val bybitClient = getByBitClient()
+            val leverageParams = LeverageParams(
+                category = Category.linear,
+                symbol = selectedSymbol,
+                buyLeverage = multiplier.toString(),
+                sellLeverage = multiplier.toString()
+            )
+            val callback = object : ByBitRestApiCallback<APIResponseV5> {
+                override fun onSuccess(result: APIResponseV5) {
+                    Log.d("Leverage", "Leverage set successfully: $result")
+                    showTradeResultDialog("Success", "Leverage set successfully for $selectedSymbol.")
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        fetchOpenOrders()
+                    }, 1500)
+                }
+
+                override fun onError(error: Throwable) {
+                    Log.e("Leverage", "Error encountered: ${error.message}")
+                    showTradeResultDialog("Error", "Failed to set leverage: ${error.message}")
+                }
+            }
+            bybitClient.positionClient.setLeverage(leverageParams,callback)
+        }
+    }
+
     private fun calculatePositionSizes(
         top: Float,
         low: Float,
@@ -199,6 +249,10 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
     ): List<Pair<Float, Float>> {
         val riskPerBid = (totalBalance * (totalRiskPercent / 100f)) / numberOfBids
         val bidPrices = calculateNumbers(low, top, numberOfBids)
+
+        val midBid=bidPrices.size / 2
+        val midBidPrice = bidPrices[midBid]
+        leverage(midBidPrice, sl)
 
         return bidPrices.map { price ->
             val risk = kotlin.math.abs(price - sl)
@@ -235,6 +289,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
             price = price,
             qty = amount,
             stopLoss= stopLoss,
+            takeProfit= takeProfit,
             timeInForce = TimeInForce.GTC,
             reduceOnly = false
         )
@@ -273,7 +328,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         val params = InstrumentsInfoParams(
             category = Category.linear,
             symbol = null,
-            limit = 500
+            limit = 1000
         )
 
         val callback = object : ByBitRestApiCallback<InstrumentsInfoResponse<InstrumentsInfoResultItem>> {

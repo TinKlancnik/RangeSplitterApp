@@ -48,12 +48,11 @@ class MainActivity : AppCompatActivity() {
 
     // This function refreshes the current fragment by notifying ViewPager2 to reload
     private fun refreshCurrentFragment() {
-        // Get the current position of the ViewPager
-        val currentPosition = viewPager.currentItem
-
-        // Notify the ViewPager2 to reload the current fragment
-        viewPager.adapter?.notifyItemChanged(currentPosition)
+        val currentFragment =
+            supportFragmentManager.findFragmentByTag("f${viewPager.currentItem}") as? RefreshableFragment
+        currentFragment?.refreshData()
     }
+
 
     // This function sets the active color of the BottomNavigationView items
     private fun setupBottomNavActiveColor() {

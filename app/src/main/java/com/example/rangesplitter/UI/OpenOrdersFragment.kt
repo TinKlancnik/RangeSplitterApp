@@ -14,9 +14,9 @@ import androidx.recyclerview.widget.RecyclerView
 import bybit.sdk.rest.ByBitRestClient
 import com.example.rangesplitter.TradeUtils.fetchOpenOrders
 
-class OpenOrdersFragment : Fragment() {
+private lateinit var recyclerView: RecyclerView
 
-    private lateinit var recyclerView: RecyclerView
+class OpenOrdersFragment : Fragment(), RefreshableFragment {
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -36,5 +36,9 @@ class OpenOrdersFragment : Fragment() {
         recyclerView.addItemDecoration(dividerItemDecoration)
 
         return view
+    }
+    override fun refreshData() {
+        // Re-fetch your open orders here
+        fetchOpenOrders(recyclerView)
     }
 }
