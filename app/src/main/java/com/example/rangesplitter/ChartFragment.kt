@@ -141,7 +141,7 @@ class ChartFragment : Fragment() {
                 }
 
                 activity?.runOnUiThread {
-                    lastCandles = sorted                     // ✅ set before render
+                    lastCandles = sorted                     // ✅ set before render-
                     candlestickSeries?.setData(data)         // draw candles first
                     xoIndicator?.render(lastCandles, true)   // then overlay indicator
                 }
