@@ -36,6 +36,9 @@ class ChartFragment : Fragment() {
     private var xoIndicator: Macro? = null
     private var lastCandles: List<Candle> = emptyList()
 
+    private var isMacroVisible = true
+    private var indicatorToggleBtn: android.widget.ImageButton? = null
+
     private val timeFrameMap = mapOf(
         "1H" to "60",
         "2H" to "120",
@@ -56,6 +59,9 @@ class ChartFragment : Fragment() {
         val chartView = view.findViewById<ChartsView>(R.id.charts_view)
         val timeFrameSpinner = view.findViewById<Spinner>(R.id.time_frame_spinner)
         if (chartView == null) { Log.e("ChartFragment", "ChartView is null"); return }
+
+        val indicatorBtn = view.findViewById<android.widget.ImageButton>(R.id.indicatorToggle)
+        indicatorToggleBtn = indicatorBtn
 
         // options
         val layoutOptions = LayoutOptions().apply { textColor = Color.BLACK.toIntColor() }
@@ -99,6 +105,14 @@ class ChartFragment : Fragment() {
                             biasEmaSeries = bias,
                             useStochRsiFilter = false
                         )
+                        // eye button behavior
+                        indicatorToggleBtn?.setOnClickListener {
+                            isMacroVisible = !isMacroVisible
+                            updateEyeIcon()
+                            applyMacroVisibility()
+                        }
+                        updateEyeIcon() // set initial icon to match isMacroVisible
+
 
                         // spinner
                         val labels = timeFrameMap.keys.toList()
@@ -143,11 +157,42 @@ class ChartFragment : Fragment() {
 
                 activity?.runOnUiThread {
                     lastCandles = sorted                     // ✅ set before render-
-                    candlestickSeries?.setData(data)         // draw candles first
-                    xoIndicator?.render(lastCandles, true)   // then overlay indicator
+                    candlestickSeries?.setData(data)
+                    if (isMacroVisible) {
+                        xoIndicator?.render(lastCandles, true)
+                    } else {
+                        applyMacroVisibility() // keep it hidden after reload
+                    }
+
                 }
             },
             onError = { Log.e("ChartFragment", "Failed to load candle data: ${it.message}", it) }
         )
     }
+    private fun updateEyeIcon() {
+        val btn = indicatorToggleBtn ?: return
+        // Use your drawable names from XML: eye_on / eye_off
+        btn.setImageResource(if (isMacroVisible) R.drawable.eye_on else R.drawable.eye_off)
+        btn.alpha = if (isMacroVisible) 1f else 0.8f
+    }
+
+    private fun applyMacroVisibility() {
+        if (isMacroVisible) {
+            if (lastCandles.isNotEmpty()) {
+                // Re-render indicator overlays/lines
+                xoIndicator?.render(lastCandles, true)
+            }
+        } else {
+            // Hide: clear EMA lines and markers drawn by Macro
+            try {
+                fastEmaSeries?.setData(emptyList<com.tradingview.lightweightcharts.api.series.models.LineData>())
+                slowEmaSeries?.setData(emptyList<com.tradingview.lightweightcharts.api.series.models.LineData>())
+                biasEmaSeries?.setData(emptyList<com.tradingview.lightweightcharts.api.series.models.LineData>())
+                candlestickSeries?.setMarkers(emptyList())
+            } catch (t: Throwable) {
+                Log.w("ChartFragment", "applyMacroVisibility hide failed: ${t.message}")
+            }
+        }
+    }
+
 }

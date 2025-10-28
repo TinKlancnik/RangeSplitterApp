@@ -24,6 +24,17 @@
             android:layout_height="wrap_content"
             android:padding="8dp" />
 
+        <ImageButton
+            android:id="@+id/indicatorToggle"
+            android:layout_width="45dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:srcCompat="@drawable/eye_on" />
+
+
     </LinearLayout>
 
     <!-- Chart view -->
