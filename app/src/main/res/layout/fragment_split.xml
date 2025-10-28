@@ -5,37 +5,34 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/primary">
+    android:background="@color/primary"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="24dp">
 
     <!-- Coin Dropdown and Price -->
-    <Spinner
+    <com.google.android.material.textfield.MaterialAutoCompleteTextView
         android:id="@+id/coinList"
         android:layout_width="0dp"
         android:layout_height="48dp"
-        android:layout_margin="24dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="24dp"
-        android:background="@android:color/transparent"
-        android:textSize="12sp"
-        app:layout_constraintEnd_toStartOf="@+id/coinPrice"
+        android:backgroundTint="@color/textPrimary"
+        android:hint="Select coin"
+        android:padding="8dp"
+        android:textSize="14sp"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/coinPrice"
         app:layout_constraintTop_toTopOf="parent" />
-
 
     <TextView
         android:id="@+id/coinPrice"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="24dp"
         android:text="--"
         android:textColor="@color/textPrimary"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:layout_constraintBaseline_toBaselineOf="@id/coinList"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/coinList"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@+id/coinList"
+        app:layout_constraintBottom_toBottomOf="@+id/coinList"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Spinners Row -->
     <LinearLayout
@@ -44,7 +41,6 @@
         android:layout_height="36dp"
         android:orientation="horizontal"
         android:layout_marginTop="8dp"
-        android:layout_marginHorizontal="24dp"
         app:layout_constraintTop_toBottomOf="@id/coinList"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -55,7 +51,6 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1" />
-
 
         <EditText
             android:id="@+id/risk"
@@ -72,9 +67,7 @@
     <EditText
         android:id="@+id/editTextRangeTop"
         style="@style/CustomEditTextStyle"
-        android:layout_marginStart="24dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="24dp"
         android:hint="Range High"
         android:inputType="numberDecimal"
         app:layout_constraintEnd_toEndOf="parent"
@@ -84,9 +77,7 @@
     <EditText
         android:id="@+id/editTextRangeLow"
         style="@style/CustomEditTextStyle"
-        android:layout_marginStart="24dp"
         android:layout_marginTop="12dp"
-        android:layout_marginEnd="24dp"
         android:hint="Range Low"
         android:inputType="numberDecimal"
         app:layout_constraintEnd_toEndOf="parent"
@@ -94,12 +85,10 @@
         app:layout_constraintTop_toBottomOf="@id/editTextRangeTop" />
 
     <!-- Action Buttons -->
-
     <Button
         android:id="@+id/setSlTpButton"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:layout_margin="24dp"
         android:layout_marginTop="10dp"
         android:backgroundTint="@color/black"
         android:text="Set SL / TP"
@@ -112,8 +101,7 @@
         android:id="@+id/linearLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="8dp"
         android:gravity="center"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
@@ -143,19 +131,84 @@
             android:textColor="@color/buttonTextColor" />
     </LinearLayout>
 
-    <!-- Open Orders List -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/openOrders"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/riskCard"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_margin="12dp"
-        android:layout_marginTop="270dp"
-        android:padding="12dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/linearLayout"
+        app:cardBackgroundColor="@color/primary"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/colorInactive"
+        app:strokeWidth="1dp"
+        android:padding="12dp">
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Title row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/riskTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Risk Allocation"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+
+                <!-- Spacer pushes the second TextView to the right -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
+
+                <TextView
+                    android:id="@+id/totalRiskText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Total: 0%"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
+
+            <!-- Legend -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="70dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/longRisk"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Long: 0%"
+                    android:textColor="@color/green"
+                    android:textSize="14dp" />
+
+                <TextView
+                    android:id="@+id/shortRisk"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:text="Short: 0%"
+                    android:textColor="@color/red"
+                    android:textSize="14dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

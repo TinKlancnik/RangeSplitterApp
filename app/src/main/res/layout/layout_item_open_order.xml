@@ -113,7 +113,16 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1.5"
+            android:orientation="vertical"
             android:gravity="end">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="TP/SL"
+                android:textColor="@color/textMuted"
+                android:textSize="12sp" />
 
             <TextView
                 android:id="@+id/TpSl"

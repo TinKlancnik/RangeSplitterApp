@@ -18,6 +18,7 @@ class OpenOrdersAdapter(
         val direction: TextView = view.findViewById(R.id.direction)
         val triggerPrice: TextView = view.findViewById(R.id.triggerPrice)
         val quantity: TextView = view.findViewById(R.id.quantity)
+        val tpSl: TextView = view.findViewById(R.id.TpSl)
         val cancelButton: Button = view.findViewById(R.id.cancelButton)
     }
 
@@ -33,6 +34,8 @@ class OpenOrdersAdapter(
         holder.direction.text = order.side
         holder.triggerPrice.text = order.triggerPrice
         holder.quantity.text = order.quantity
+        holder.tpSl.text = "${order.takeProfit}/${order.stopLoss}"
+
 
         holder.direction.setTextColor(
             if (order.side.equals("Buy", true)) Color.GREEN else Color.RED

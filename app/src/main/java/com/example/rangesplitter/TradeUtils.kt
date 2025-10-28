@@ -27,7 +27,9 @@ data class OpenOrder(
     val triggerPrice: String,
     val side: String,
     val quantity: String,
-    val orderId: String
+    val orderId: String,
+    val takeProfit: String?,
+    val stopLoss: String?
 )
 
 data class OpenPosition(
@@ -63,7 +65,9 @@ object TradeUtils {
                         triggerPrice = it.price,
                         side = it.side.toString(),
                         quantity = it.qty,
-                        orderId = it.orderId
+                        orderId = it.orderId,
+                        takeProfit = it.takeProfit,
+                        stopLoss = it.stopLoss
                     )
                 }
 

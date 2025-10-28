@@ -96,7 +96,8 @@ class ChartFragment : Fragment() {
                             candlestickSeries = cs,
                             fastEmaSeries = fast,
                             slowEmaSeries = slow,
-                            biasEmaSeries = bias
+                            biasEmaSeries = bias,
+                            useStochRsiFilter = false
                         )
 
                         // spinner

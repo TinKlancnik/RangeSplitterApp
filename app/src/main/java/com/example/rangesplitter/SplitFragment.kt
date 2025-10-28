@@ -39,6 +39,8 @@ import bybit.sdk.rest.order.OrdersOpenParams
 import bybit.sdk.rest.order.OrdersOpenResponse
 import bybit.sdk.rest.position.LeverageParams
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
+
 
 class SplitFragment : Fragment(R.layout.fragment_split) {
 
@@ -56,27 +58,29 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val coinSpinner = view.findViewById<Spinner>(R.id.coinList)
-        coinAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, coinList)
-        coinAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-        coinSpinner.adapter = coinAdapter
+        val coinAuto = view.findViewById<MaterialAutoCompleteTextView>(R.id.coinList)
 
-        // Set up the spinner listener to update the selected symbol
-        coinSpinner.setOnItemSelectedListener(object :
-            android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: android.widget.AdapterView<*>,
-                view: View,
-                position: Int,
-                id: Long
-            ) {
-                selectedSymbol = coinList[position]
-            }
+        // Use the same adapter you already have
+                coinAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, coinList)
+        // (Optional) if you want your custom dropdown row, setDropDownViewResource still works
+                coinAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                coinAuto.setAdapter(coinAdapter)
 
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>) {
-                selectedSymbol = "BTCUSDT" // fallback symbol
-            }
-        })
+        // Show all coins when focused (nice UX)
+                coinAuto.setOnFocusChangeListener { _, hasFocus ->
+                    if (hasFocus) coinAuto.showDropDown()
+                }
+
+        // Update selection when user picks / types & picks
+                coinAuto.setOnItemClickListener { _, _, position, _ ->
+                    selectedSymbol = coinAdapter.getItem(position) ?: "BTCUSDT"
+                    // refresh price immediately for the newly picked coin
+                    fetchCoinPrice(selectedSymbol)
+                }
+
+        // Set default text so something is visible
+                coinAuto.setText(selectedSymbol, /* filter= */ false)
+
 
         val spinner = view.findViewById<Spinner>(R.id.spinnerValues)
         val items = arrayOf(3, 5)
@@ -165,15 +169,10 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
             }
         }
 
-        val recyclerView = view.findViewById<RecyclerView>(R.id.openOrders)
-        recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        val dividerItemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
-        recyclerView.addItemDecoration(dividerItemDecoration)
 
 
         fetchPerpetualCoins()
         startPriceUpdates()
-        fetchOpenOrders()
     }
 
     private fun showSlTpDialog() {
@@ -226,7 +225,6 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
                     Log.d("Leverage", "Leverage set successfully: $result")
                     showTradeResultDialog("Success", "Leverage set successfully for $selectedSymbol.")
                     Handler(Looper.getMainLooper()).postDelayed({
-                        fetchOpenOrders()
                     }, 1500)
                 }
 
@@ -299,7 +297,6 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
                 Log.d("Trade", "Trade placed successfully: ${result}")
                 showTradeResultDialog("Success", "Trade placed successfully for $selectedSymbol at $price.")
                 Handler(Looper.getMainLooper()).postDelayed({
-                    fetchOpenOrders()
                 }, 1500)
             }
 
@@ -357,40 +354,6 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         })
     }
 
-    private fun fetchOpenOrders() {
-        val bybitClient = getByBitClient()
-        val params = OrdersOpenParams(category = Category.linear, settleCoin = "USDT")
-
-        val callback = object : ByBitRestApiCallback<OrdersOpenResponse> {
-            override fun onSuccess(result: OrdersOpenResponse) {
-                val openOrders = result.result.list.map {
-                    OpenOrder(
-                        symbol = it.symbol,
-                        triggerPrice = it.price,
-                        side = it.side.toString(),
-                        quantity = it.qty,
-                        orderId = it.orderId
-                    )
-                }
-
-                activity?.runOnUiThread {
-                    val adapter = OpenOrdersAdapter(openOrders) { order: OpenOrder ->
-                        cancelOrder(order)
-                    }
-
-                    // Use the view reference to access RecyclerView in the fragment
-                    view?.findViewById<RecyclerView>(R.id.openOrders)?.adapter = adapter
-                }
-
-            }
-
-            override fun onError(error: Throwable) {
-                Log.e("OpenOrders", "Error: ${error.message}")
-            }
-        }
-
-        bybitClient.orderClient.ordersOpen(params, callback)
-    }
 
     private fun cancelOrder(order: OpenOrder) {
         val bybitClient = getByBitClient()
@@ -406,7 +369,6 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
                 Log.d("CancelOrder", "Success: ${result.result.orderId}")
                 activity?.runOnUiThread {
                     showTradeResultDialog("Order Cancelled", "Successfully cancelled order: ${order.orderId}")
-                    fetchOpenOrders()
                 }
             }
 
