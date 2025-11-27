@@ -6,54 +6,110 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/primary"
-    android:paddingTop="16dp">
+    android:paddingTop="24dp"
+    android:paddingHorizontal="16dp">
 
-    <!-- Search / filter bar -->
+    <!-- 1) TITLE -->
+    <TextView
+        android:id="@+id/titleName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Range Splitter"
+        android:textColor="@color/textPrimary"
+        android:textStyle="bold"
+        android:textSize="24sp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- 2) FILTER BUTTON GROUP -->
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/filterGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:layout_marginTop="16dp"
+        app:singleSelection="true"
+        app:selectionRequired="true"
+        app:layout_constraintTop_toBottomOf="@id/titleName"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVolume"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Volume"
+            android:textSize="12sp"
+            app:cornerRadius="18dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnChange"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="24h %"
+            android:textSize="12sp"
+            app:cornerRadius="18dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVolatility"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Volatility"
+            android:textSize="12sp"
+            app:cornerRadius="18dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAlphabetical"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="A–Z"
+            android:textSize="12sp"
+            app:cornerRadius="18dp" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <!-- 3) SEARCH BAR -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/coinSearchContainer"
         style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="150dp"
-        android:layout_margin="20dp"
         android:hint="Search coin"
+        android:layout_marginTop="16dp"
         app:boxBackgroundColor="@color/cardInputBG"
-        app:boxCornerRadiusBottomEnd="12dp"
-        app:boxCornerRadiusBottomStart="12dp"
-        app:boxCornerRadiusTopEnd="12dp"
         app:boxCornerRadiusTopStart="12dp"
-        app:hintTextColor="@color/textPrimary"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusBottomEnd="12dp"
         app:startIconDrawable="@android:drawable/ic_menu_search"
-        app:startIconTint="@color/textPrimary">
+        app:startIconTint="@color/textPrimary"
+        app:layout_constraintTop_toBottomOf="@id/filterGroup"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- This keeps the same id you use in code -->
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
             android:id="@+id/coinList"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:inputType="text"
             android:paddingHorizontal="8dp"
             android:textColor="@color/textPrimary"
-            android:textSize="14sp" />
+            android:textSize="14sp"/>
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Header row: COIN | PRICE -->
+    <!-- 4) COIN LIST -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerCoins"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="10dp"
-        android:background="@color/cardInputBG"
+        android:layout_marginTop="12dp"
         android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/coinSearchContainer"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/coinSearchContainer"
-        tools:listitem="@layout/layout_item_coin" />
-
-    <!-- List of coins (uses item_coin_row.xml for each row) -->
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:listitem="@layout/layout_item_coin"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

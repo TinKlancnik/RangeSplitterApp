@@ -14,13 +14,8 @@ import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import bybit.sdk.rest.ByBitRestApiCallback
-import bybit.sdk.rest.ByBitRestClient
-import bybit.sdk.rest.market.InstrumentsInfoParams
-import bybit.sdk.rest.market.InstrumentsInfoResponse
-import bybit.sdk.rest.market.InstrumentsInfoResultItem
-import bybit.sdk.rest.okHttpClientProvider
-import bybit.sdk.shared.Category
+import com.bumptech.glide.Glide
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -33,9 +28,10 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
 
     data class Coin(
         val symbol: String,
-        val iconRes: Int,
         var priceText: String = "--"
     )
+
+    private enum class SortMode { VOLUME, CHANGE, VOLATILITY, ALPHA }
 
     // --- RecyclerView adapter ---
 
@@ -48,17 +44,34 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
             val icon: ImageView = view.findViewById(R.id.imgCoinIcon)
             val name: TextView = view.findViewById(R.id.txtCoinName)
             val price: TextView = view.findViewById(R.id.txtCoinPrice)
+
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CoinViewHolder {
             val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.layout_item_coin, parent, false)
+                .inflate(R.layout.layout_item_coin, parent, false)   // or R.layout.item_coin_row if that's your file name
             return CoinViewHolder(view)
         }
 
         override fun onBindViewHolder(holder: CoinViewHolder, position: Int) {
             val coin = items[position]
-            holder.icon.setImageResource(coin.iconRes)
+
+            // Extract base asset, e.g. "BTCUSDT" -> "btc", "1000PEPEUSDT" -> "pepe"
+            val lettersOnly = coin.symbol.takeWhile { it.isLetter() }
+            val baseAsset = if (lettersOnly.isNotEmpty()) {
+                lettersOnly.lowercase()
+            } else {
+                coin.symbol.lowercase()
+            }
+
+            val iconUrl = "https://cryptoicons.org/api/icon/$baseAsset/64"
+
+            Glide.with(holder.itemView)
+                .load(iconUrl)
+                .placeholder(R.drawable.chart)
+                .error(R.drawable.chart)
+                .into(holder.icon)
+
             holder.name.text = coin.symbol
             holder.price.text = coin.priceText
         }
@@ -70,14 +83,16 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
 
     private lateinit var searchInput: MaterialAutoCompleteTextView
     private lateinit var recycler: RecyclerView
+    private lateinit var filterGroup: MaterialButtonToggleGroup
     private lateinit var coinAdapter: CoinAdapter
 
-    private val allCoins = mutableListOf<Coin>()      // full list from Bybit
+    private val allCoins = mutableListOf<Coin>()      // full list from Bybit (max 50)
     private val visibleCoins = mutableListOf<Coin>()  // filtered list for UI
 
     private var selectedSymbol: String = "BTCUSDT"
+    private var sortMode: SortMode = SortMode.VOLUME
 
-    private val updateInterval: Long = 500
+    private val updateInterval: Long = 3_000          // 3s
     private val handler = Handler(Looper.getMainLooper())
 
     // --- lifecycle ---
@@ -87,11 +102,11 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
 
         searchInput = view.findViewById(R.id.coinList)
         recycler = view.findViewById(R.id.recyclerCoins)
+        filterGroup = view.findViewById(R.id.filterGroup)
 
         // RecyclerView setup
         coinAdapter = CoinAdapter(visibleCoins) { coin ->
             selectedSymbol = coin.symbol
-            // optional: show selected symbol in search field
             searchInput.setText(coin.symbol, false)
         }
 
@@ -114,87 +129,34 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
             coinAdapter.notifyDataSetChanged()
         }
 
-        // Load coin list from Bybit and start price updates
-        fetchPerpetualCoins()
+        // Button group: change sort mode
+        filterGroup.check(R.id.btnVolume) // default selection
+
+        filterGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+
+            sortMode = when (checkedId) {
+                R.id.btnVolume -> SortMode.VOLUME
+                R.id.btnChange -> SortMode.CHANGE
+                R.id.btnVolatility -> SortMode.VOLATILITY
+                R.id.btnAlphabetical -> SortMode.ALPHA
+                else -> SortMode.VOLUME
+            }
+
+            // Re-fetch and re-sort coins with new mode
+            fetchTopCoinsWithPrices(limit = 50)
+        }
+
+        // Initial load + periodic refresh
+        fetchTopCoinsWithPrices(limit = 50)
         startPriceUpdates()
     }
 
-    // --- Bybit client ---
+    // --- fetch 50 coins + their prices, sorted by current sortMode ---
 
-    private fun getByBitClient(): ByBitRestClient {
-        val apiKey = "UV6R9A3gNuk9vl0vVQ"
-        val apiSecret = "vRdpemzToMITR53ftZSM3ar7kSdx6NeodJTn"
-        return ByBitRestClient(apiKey, apiSecret, true, httpClientProvider = okHttpClientProvider)
-    }
-
-    // --- icons ---
-
-    private fun getIconForSymbol(symbol: String): Int {
-        // Extend this when you add real icons
-        return R.drawable.chart
-    }
-
-    // --- fetch coin list ---
-
-    private fun fetchPerpetualCoins() {
-        val bybitClient = getByBitClient()
-
-        val params = InstrumentsInfoParams(
-            category = Category.linear,
-            symbol = null,
-            limit = 1000
-        )
-
-        val callback = object : ByBitRestApiCallback<InstrumentsInfoResponse<InstrumentsInfoResultItem>> {
-            override fun onSuccess(result: InstrumentsInfoResponse<InstrumentsInfoResultItem>) {
-                allCoins.clear()
-                visibleCoins.clear()
-
-                result.result?.list?.forEach { instrument ->
-                    val symbol = instrument.symbol
-                    val coin = Coin(
-                        symbol = symbol,
-                        iconRes = getIconForSymbol(symbol),
-                        priceText = "--"
-                    )
-                    allCoins.add(coin)
-                }
-
-                // show all by default
-                visibleCoins.addAll(allCoins)
-
-                activity?.runOnUiThread {
-                    coinAdapter.notifyDataSetChanged()
-                }
-            }
-
-            override fun onError(error: Throwable) {
-                Log.e("SupportedInstrument", "Error fetching supported instruments: ${error.message}")
-                activity?.runOnUiThread {
-                    Toast.makeText(requireContext(), "Error loading coins", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-        bybitClient.marketClient.getInstrumentsInfo(params, callback)
-    }
-
-    // --- periodic price updates ---
-
-    private fun startPriceUpdates() {
-        handler.post(object : Runnable {
-            override fun run() {
-                fetchCoinPrice(selectedSymbol)
-                handler.postDelayed(this, updateInterval)
-            }
-        })
-    }
-
-    // --- price fetch ---
-
-    private fun fetchCoinPrice(symbol: String) {
+    private fun fetchTopCoinsWithPrices(limit: Int = 50) {
         val client = OkHttpClient()
-        val url = "https://api-testnet.bybit.com/v5/market/tickers?category=inverse&symbol=$symbol"
+        val url = "https://api-testnet.bybit.com/v5/market/tickers?category=linear"
 
         val request = Request.Builder()
             .url(url)
@@ -207,30 +169,100 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
                 if (response.isSuccessful) {
                     val jsonResponse = JSONObject(response.body?.string() ?: "")
                     val result = jsonResponse.getJSONObject("result")
+                    val list = result.getJSONArray("list")
 
-                    if (result.length() > 0) {
-                        val ticker = result.getJSONArray("list").getJSONObject(0)
+                    data class RawCoin(
+                        val symbol: String,
+                        val lastPrice: String,
+                        val turnover24h: Double,
+                        val volume24h: Double,
+                        val change24h: Double,
+                        val volatility: Double
+                    )
+
+                    val rawCoins = mutableListOf<RawCoin>()
+
+                    for (i in 0 until list.length()) {
+                        val ticker = list.getJSONObject(i)
+                        val symbol = ticker.getString("symbol")
                         val lastPrice = ticker.getString("lastPrice")
 
-                        activity?.runOnUiThread {
-                            // find coin in full list and update its price
-                            val coin = allCoins.find { it.symbol == symbol }
-                            if (coin != null) {
-                                coin.priceText = lastPrice
-                                coinAdapter.notifyDataSetChanged()
-                            }
-                        }
+                        val turnoverStr = ticker.optString("turnover24h", "0")
+                        val volumeStr = ticker.optString("volume24h", "0")
+                        val changeStr = ticker.optString("price24hPcnt", "0")
+                        val highStr = ticker.optString("highPrice24h", "0")
+                        val lowStr = ticker.optString("lowPrice24h", "0")
 
-                        Log.d("CoinPrice", "Last price for $symbol: $lastPrice")
-                    } else {
-                        Log.d("CoinPrice", "No data available for $symbol.")
+                        val turnover = turnoverStr.toDoubleOrNull() ?: 0.0
+                        val volume = volumeStr.toDoubleOrNull() ?: 0.0
+                        val change = changeStr.toDoubleOrNull() ?: 0.0
+                        val high = highStr.toDoubleOrNull() ?: 0.0
+                        val low = lowStr.toDoubleOrNull() ?: 0.0
+                        val volatility = high - low
+
+                        rawCoins.add(
+                            RawCoin(
+                                symbol = symbol,
+                                lastPrice = lastPrice,
+                                turnover24h = turnover,
+                                volume24h = volume,
+                                change24h = change,
+                                volatility = volatility
+                            )
+                        )
                     }
+
+                    // Filter to USDT perps only (optional - comment out if you want everything)
+                    val filtered = rawCoins.filter { it.symbol.endsWith("USDT") }
+
+                    val sorted = when (sortMode) {
+                        SortMode.VOLUME -> filtered.sortedByDescending { it.turnover24h }
+                        SortMode.CHANGE -> filtered.sortedByDescending { it.change24h }
+                        SortMode.VOLATILITY -> filtered.sortedByDescending { it.volatility }
+                        SortMode.ALPHA -> filtered.sortedBy { it.symbol }
+                    }
+
+                    val top = sorted.take(limit)
+
+                    val newCoins = top.map { raw ->
+                        Coin(
+                            symbol = raw.symbol,
+                            priceText = raw.lastPrice
+                        )
+                    }
+
+                    activity?.runOnUiThread {
+                        allCoins.clear()
+                        visibleCoins.clear()
+
+                        allCoins.addAll(newCoins)
+                        visibleCoins.addAll(newCoins)
+
+                        coinAdapter.notifyDataSetChanged()
+                    }
+
+                    Log.d("CoinList", "Loaded ${newCoins.size} coins, mode=$sortMode")
                 } else {
-                    Log.d("CoinPrice", "Failed to fetch coin price.")
+                    Log.d("CoinList", "Failed to fetch tickers: ${response.code}")
+                    activity?.runOnUiThread {
+                        Toast.makeText(requireContext(), "Failed to fetch coins", Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: Exception) {
-                Log.d("CoinPrice", "Error: ${e.message}")
+                Log.d("CoinList", "Error: ${e.message}")
+                activity?.runOnUiThread {
+                    Toast.makeText(requireContext(), "Error loading coins", Toast.LENGTH_SHORT).show()
+                }
             }
         }.start()
+    }
+
+    private fun startPriceUpdates() {
+        handler.post(object : Runnable {
+            override fun run() {
+                fetchTopCoinsWithPrices(limit = 50)
+                handler.postDelayed(this, updateInterval)
+            }
+        })
     }
 }
