@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="72dp"
+    android:paddingHorizontal="16dp"
+    android:background="@color/primary">
+
+    <!-- Bottom line divider -->
+    <View
+        android:id="@+id/bottomDivider"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="@color/textPrimary"
+        android:alpha="0.25"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Coin icon -->
+    <ImageView
+        android:id="@+id/imgCoinIcon"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:src="@drawable/chart"
+        android:scaleType="centerCrop"
+        android:padding="4dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- Coin name / symbol -->
+    <TextView
+        android:id="@+id/txtCoinName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:text="Bitcoin"
+        android:textColor="@color/textPrimary"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/imgCoinIcon"
+        app:layout_constraintTop_toTopOf="@id/imgCoinIcon"
+        app:layout_constraintBottom_toBottomOf="@id/imgCoinIcon"
+        app:layout_constraintEnd_toStartOf="@id/txtCoinPrice" />
+
+    <!-- Price -->
+    <TextView
+        android:id="@+id/txtCoinPrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="$66,123.45"
+        android:textColor="@color/textPrimary"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="@id/txtCoinName"
+        app:layout_constraintBottom_toBottomOf="@id/txtCoinName"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

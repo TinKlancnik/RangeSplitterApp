@@ -13,6 +13,7 @@
     <color name="cardInputBG">#22354D</color>
     <color name="primaryAccent">#5DADE2</color>
     <color name="highlightCTA">#00C9A7</color>
+    <color name="card">#4D00C9A7</color>
     <color name="green">#43846F</color>
     <color name="red">#C36161</color>
     <color name="textPrimary">#EAEDED</color>

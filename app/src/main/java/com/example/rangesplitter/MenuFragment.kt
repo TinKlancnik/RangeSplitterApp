@@ -1,23 +1,16 @@
 package com.example.rangesplitter
 
-import com.example.rangesplitter.TradeUtils
+import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.viewpager2.widget.ViewPager2
-import bybit.sdk.rest.ByBitRestClient
-import bybit.sdk.rest.account.WalletBalanceParams
-import bybit.sdk.rest.okHttpClientProvider
-import bybit.sdk.shared.AccountType
 import com.example.rangesplitter.UI.ViewPagerAdapter
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+
 
 class MenuFragment : Fragment(R.layout.fragment_menu) {
 
@@ -31,20 +24,28 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
         balanceTextView = view.findViewById(R.id.balanceTextView)
         val mainButton = view.findViewById<Button>(R.id.splitButton)
 
+        // FIXED: use view.findViewById
+        val coinListButton = view.findViewById<Button>(R.id.trade)
+
+        // FIXED: open CoinSelectFragment using FragmentTransaction
+        coinListButton.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.main_root, CoinSelectFragment())
+                .addToBackStack(null)
+                .commit()
+        }
+
         TradeUtils.fetchBalance { balance ->
             balanceTextView.text = "$balance USD"
         }
 
-
-        // Initialize the ViewPager and TabLayout
+        // Initialize ViewPager + Tabs
         viewPager = view.findViewById(R.id.viewPager)
         tabLayout = view.findViewById(R.id.tabLayout)
 
-        // Set up the ViewPager with the adapter
         val adapter = ViewPagerAdapter(requireActivity())
         viewPager.adapter = adapter
 
-        // Set up the TabLayout with the ViewPager
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = when (position) {
                 0 -> "Orders"
@@ -53,9 +54,10 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
             }
         }.attach()
 
-        // Set up the mainButton click listener
+        // Main button click
         mainButton.setOnClickListener {
-            viewPager.currentItem = 2  // Ensure this is the correct position
+            viewPager.currentItem = 2 // adjust if needed
         }
     }
 }
+

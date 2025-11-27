@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/primary"
+    android:paddingTop="16dp">
+
+    <!-- Search / filter bar -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/coinSearchContainer"
+        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="150dp"
+        android:layout_margin="20dp"
+        android:hint="Search coin"
+        app:boxBackgroundColor="@color/cardInputBG"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusTopStart="12dp"
+        app:hintTextColor="@color/textPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:startIconDrawable="@android:drawable/ic_menu_search"
+        app:startIconTint="@color/textPrimary">
+
+        <!-- This keeps the same id you use in code -->
+        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+            android:id="@+id/coinList"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:inputType="text"
+            android:paddingHorizontal="8dp"
+            android:textColor="@color/textPrimary"
+            android:textSize="14sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Header row: COIN | PRICE -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerCoins"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:background="@color/cardInputBG"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/coinSearchContainer"
+        tools:listitem="@layout/layout_item_coin" />
+
+    <!-- List of coins (uses item_coin_row.xml for each row) -->
+
+</androidx.constraintlayout.widget.ConstraintLayout>
