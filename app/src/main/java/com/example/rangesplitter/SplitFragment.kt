@@ -33,7 +33,19 @@ import org.json.JSONObject
 
 class SplitFragment : Fragment(R.layout.fragment_split) {
 
-    private var selectedSymbol: String = "BTCUSDT"
+    companion object {
+        private const val ARG_SYMBOL = "symbol"
+
+        fun newInstance(symbol: String): SplitFragment {
+            return SplitFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_SYMBOL, symbol)
+                }
+            }
+        }
+    }
+
+    private lateinit var symbol: String
 
     private val updateInterval: Long = 1_000
     private val handler = Handler(Looper.getMainLooper())
@@ -48,12 +60,9 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1) from arguments (if ever used in future)
-        selectedSymbol = arguments?.getString("symbol")
-                // 2) from MainActivity (coin selected in list)
-            ?: (activity as? MainActivity)?.selectedSymbolForSplit
-                    // 3) fallback
-                    ?: "BTCUSDT"
+        // ✅ RECEIVE THE SYMBOL HERE
+        symbol = arguments?.getString(ARG_SYMBOL) ?: "BTCUSDT"
+        Log.d("SplitFragment", "Received symbol: $symbol")
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -63,7 +72,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         coinPriceTextView = view.findViewById(R.id.coinPrice)
 
         // show the symbol at the top
-        coinNameTextView.text = selectedSymbol
+        coinNameTextView.text = symbol
 
         val spinner = view.findViewById<Spinner>(R.id.spinnerValues)
         val rangeTopEditText = view.findViewById<EditText>(R.id.editTextRangeTop)
@@ -72,7 +81,6 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         val sellButton = view.findViewById<Button>(R.id.buttonSell)
         val backButton = view.findViewById<ImageView>(R.id.backButton)
 
-        // simple spinner values
         val items = arrayOf(3, 5)
         val spinnerAdapter = android.widget.ArrayAdapter(
             requireContext(),
@@ -93,7 +101,8 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         }
 
         backButton.setOnClickListener {
-            (requireActivity() as MainActivity).viewPager.currentItem = 3
+            parentFragmentManager.popBackStack()
+            requireActivity().findViewById<View>(R.id.fragmentContainer).visibility = View.GONE
         }
 
         buyButton.setOnClickListener {
@@ -208,14 +217,14 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
             val bybitClient = getByBitClient()
             val leverageParams = LeverageParams(
                 category = Category.linear,
-                symbol = selectedSymbol,
+                symbol = symbol,
                 buyLeverage = multiplier.toString(),
                 sellLeverage = multiplier.toString()
             )
             val callback = object : ByBitRestApiCallback<APIResponseV5> {
                 override fun onSuccess(result: APIResponseV5) {
                     Log.d("Leverage", "Leverage set successfully: $result")
-                    showTradeResultDialog("Success", "Leverage set successfully for $selectedSymbol.")
+                    showTradeResultDialog("Success", "Leverage set successfully for $symbol.")
                 }
 
                 override fun onError(error: Throwable) {
@@ -270,7 +279,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
 
         val tradeParams = PlaceOrderParams(
             category = Category.linear,
-            symbol = selectedSymbol,
+            symbol = symbol,
             side = side,
             orderType = OrderType.Limit,
             price = price,
@@ -284,7 +293,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         val callback = object : ByBitRestApiCallback<PlaceOrderResponse> {
             override fun onSuccess(result: PlaceOrderResponse) {
                 Log.d("Trade", "Trade placed successfully: $result")
-                showTradeResultDialog("Success", "Trade placed successfully for $selectedSymbol at $price.")
+                showTradeResultDialog("Success", "Trade placed successfully for $symbol at $price.")
             }
 
             override fun onError(error: Throwable) {
@@ -311,7 +320,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
     private fun startPriceUpdates() {
         handler.post(object : Runnable {
             override fun run() {
-                fetchCoinPrice(selectedSymbol)
+                fetchCoinPrice(symbol)
                 handler.postDelayed(this, updateInterval)
             }
         })

@@ -24,15 +24,13 @@ import java.util.Locale
 class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
 
     data class Coin(
-        val symbol: String,      // e.g. BTCUSDT
-        val priceText: String,   // formatted price
-        val changeText: String,  // "+1.23%" or "-0.54%"
-        val changeValue: Double  // numeric value, used for sorting & color
+        val symbol: String,
+        val priceText: String,
+        val changeText: String,
+        val changeValue: Double
     )
 
     private enum class SortMode { VOLUME, CHANGE, VOLATILITY, ALPHA }
-
-    // --- RecyclerView adapter ---
 
     private class CoinAdapter(
         private val items: List<Coin>,
@@ -145,27 +143,9 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
             fetchTopCoinsWithPrices(limit = 50)
         }
 
-        // Initial load + periodic refresh
         fetchTopCoinsWithPrices(limit = 50)
         startPriceUpdates()
     }
-
-    override fun onResume() {
-        super.onResume()
-
-        // Reset selected symbol to default
-        selectedSymbol = "BTCUSDT"
-
-        // Optional: reset search field and visible list as well
-        searchInput.setText("", false)
-        visibleCoins.clear()
-        visibleCoins.addAll(allCoins)
-        coinAdapter.notifyDataSetChanged()
-
-        // Optional: reset chips to default sort mode
-        filterGroup.check(R.id.chipVolume)
-    }
-
 
     private fun openSplitFragment(symbol: String) {
         (requireActivity() as MainActivity).openSplitForSymbol(symbol)

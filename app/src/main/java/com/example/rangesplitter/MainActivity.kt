@@ -2,6 +2,7 @@ package com.example.rangesplitter
 
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -16,9 +17,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var bottomNav: BottomNavigationView
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
-
-    // 👇 this is what SplitFragment will read
-    var selectedSymbolForSplit: String? = null
 
     companion object {
         private const val ARG_SYMBOL = "symbol"
@@ -57,12 +55,18 @@ class MainActivity : AppCompatActivity() {
         setupBottomNavActiveColor()
     }
 
-    // 👇 called from CoinSelectFragment when a coin is clicked
     fun openSplitForSymbol(symbol: String) {
-        selectedSymbolForSplit = symbol
-        viewPager.currentItem = 1
-    }
 
+        // make the container visible
+        findViewById<View>(R.id.fragmentContainer).visibility = View.VISIBLE
+
+        val fragment = SplitFragment.newInstance(symbol)
+
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, fragment)
+            .addToBackStack(null)
+            .commit()
+    }
     fun openCoinSelect() {
         viewPager.currentItem = 3
     }
