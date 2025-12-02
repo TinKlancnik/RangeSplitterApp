@@ -22,15 +22,7 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
         super.onViewCreated(view, savedInstanceState)
 
         balanceTextView = view.findViewById(R.id.balanceTextView)
-        val mainButton = view.findViewById<Button>(R.id.splitButton)
 
-        // FIXED: use view.findViewById
-        val coinListButton = view.findViewById<Button>(R.id.trade)
-
-        // FIXED: open CoinSelectFragment using FragmentTransaction
-        coinListButton.setOnClickListener {
-            (requireActivity() as MainActivity).openCoinSelect()
-        }
 
         TradeUtils.fetchBalance { balance ->
             balanceTextView.text = "$balance USD"
@@ -51,10 +43,6 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
             }
         }.attach()
 
-        // Main button click
-        mainButton.setOnClickListener {
-            viewPager.currentItem = 2 // adjust if needed
-        }
     }
 }
 
