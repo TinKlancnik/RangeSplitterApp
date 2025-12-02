@@ -14,7 +14,7 @@
     <!-- 2) FILTER BUTTON GROUP -->
     <TextView
         android:id="@+id/titleName"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Range Splitter"
         android:textColor="@color/textPrimary"
@@ -27,7 +27,7 @@
 
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/filterGroup"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         app:singleSelection="true"
@@ -101,6 +101,10 @@
         app:boxCornerRadiusBottomEnd="12dp"
         app:startIconDrawable="@android:drawable/ic_menu_search"
         app:startIconTint="@color/textPrimary"
+        app:boxStrokeWidth="0dp"
+        app:boxStrokeWidthFocused="0dp"
+        app:boxStrokeColor="@android:color/transparent"
+
         app:layout_constraintTop_toBottomOf="@id/filterGroup"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -111,6 +115,7 @@
             android:layout_height="48dp"
             android:paddingHorizontal="8dp"
             android:textColor="@color/textPrimary"
+            android:textColorHint="@color/textMuted"
             android:textSize="14sp"/>
     </com.google.android.material.textfield.TextInputLayout>
 

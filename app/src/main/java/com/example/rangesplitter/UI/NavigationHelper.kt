@@ -37,7 +37,7 @@ object NavigationHelper {
                 super.onPageSelected(position)
                 val itemId = when (position) {
                     0 -> R.id.nav_home
-                    1 -> R.id.nav_trade
+                    3 -> R.id.nav_trade
                     2 -> R.id.nav_chart
                     else -> R.id.nav_home
                 }
