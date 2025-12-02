@@ -22,10 +22,10 @@ object NavigationHelper {
         // Set up BottomNavigationView to handle fragment switching
         bottomNav.setOnItemSelectedListener { item ->
             val position = when (item.itemId) {
-                R.id.nav_home -> 0 // MenuFragment
-                R.id.nav_trade -> 1 // SplitFragment
-                R.id.nav_chart -> 2 // MenuFragment (or another fragment if needed)
-                else -> 0 // Default to MenuFragment
+                R.id.nav_home -> 0
+                R.id.nav_trade -> 3
+                R.id.nav_chart -> 2
+                else -> 0
             }
             viewPager.currentItem = position
             true

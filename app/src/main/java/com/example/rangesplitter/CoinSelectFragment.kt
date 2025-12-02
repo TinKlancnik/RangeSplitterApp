@@ -89,7 +89,7 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
     private var selectedSymbol: String = "BTCUSDT"
     private var sortMode: SortMode = SortMode.VOLUME
 
-    private val updateInterval: Long = 3_000
+    private val updateInterval: Long = 5_000
     private val handler = Handler(Looper.getMainLooper())
 
     // --- lifecycle ---
@@ -150,7 +150,6 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
     private fun openSplitFragment(symbol: String) {
         (requireActivity() as MainActivity).openSplitForSymbol(symbol)
     }
-
 
     private fun fetchTopCoinsWithPrices(limit: Int = 50) {
         val client = OkHttpClient()
