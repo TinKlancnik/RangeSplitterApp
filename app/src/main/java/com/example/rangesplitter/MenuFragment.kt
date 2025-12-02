@@ -29,10 +29,7 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
 
         // FIXED: open CoinSelectFragment using FragmentTransaction
         coinListButton.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.main_root, CoinSelectFragment())
-                .addToBackStack(null)
-                .commit()
+            (requireActivity() as MainActivity).openCoinSelect()
         }
 
         TradeUtils.fetchBalance { balance ->

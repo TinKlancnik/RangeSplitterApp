@@ -1,6 +1,5 @@
 package com.example.rangesplitter
 
-
 import android.content.Context.INPUT_METHOD_SERVICE
 import android.os.Bundle
 import android.os.Handler
@@ -8,98 +7,84 @@ import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import bybit.sdk.rest.APIResponseV5
 import bybit.sdk.rest.ByBitRestApiCallback
 import bybit.sdk.rest.ByBitRestClient
-import bybit.sdk.rest.market.InstrumentsInfoParams
-import bybit.sdk.rest.market.InstrumentsInfoResponse
-import bybit.sdk.rest.market.InstrumentsInfoResultItem
 import bybit.sdk.rest.okHttpClientProvider
 import bybit.sdk.rest.order.PlaceOrderParams
 import bybit.sdk.rest.order.PlaceOrderResponse
+import bybit.sdk.rest.position.LeverageParams
 import bybit.sdk.shared.Category
 import bybit.sdk.shared.OrderType
 import bybit.sdk.shared.Side
 import bybit.sdk.shared.TimeInForce
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONObject
-import bybit.sdk.rest.order.OrdersOpenParams
-import bybit.sdk.rest.order.OrdersOpenResponse
-import bybit.sdk.rest.position.LeverageParams
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.textfield.MaterialAutoCompleteTextView
-
 
 class SplitFragment : Fragment(R.layout.fragment_split) {
 
-    private lateinit var coinAdapter: ArrayAdapter<String>
-    private val coinList = mutableListOf<String>()
     private var selectedSymbol: String = "BTCUSDT"
-    private val updateInterval: Long = 500
-    private val handler = android.os.Handler()
+
+    private val updateInterval: Long = 1_000
+    private val handler = Handler(Looper.getMainLooper())
+
     private lateinit var coinPriceTextView: TextView
-    private var totalBalance=""
+    private lateinit var coinNameTextView: TextView
+
+    private var totalBalance = ""
     private var stopLoss: String? = null
     private var takeProfit: String? = null
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // 1) from arguments (if ever used in future)
+        selectedSymbol = arguments?.getString("symbol")
+                // 2) from MainActivity (coin selected in list)
+            ?: (activity as? MainActivity)?.selectedSymbolForSplit
+                    // 3) fallback
+                    ?: "BTCUSDT"
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val coinAuto = view.findViewById<MaterialAutoCompleteTextView>(R.id.coinList)
+        coinNameTextView = view.findViewById(R.id.coinName)
+        coinPriceTextView = view.findViewById(R.id.coinPrice)
 
-        // Use the same adapter you already have
-                coinAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, coinList)
-        // (Optional) if you want your custom dropdown row, setDropDownViewResource still works
-                coinAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-                coinAuto.setAdapter(coinAdapter)
-
-        // Show all coins when focused (nice UX)
-                coinAuto.setOnFocusChangeListener { _, hasFocus ->
-                    if (hasFocus) coinAuto.showDropDown()
-                }
-
-        // Update selection when user picks / types & picks
-                coinAuto.setOnItemClickListener { _, _, position, _ ->
-                    selectedSymbol = coinAdapter.getItem(position) ?: "BTCUSDT"
-                    // refresh price immediately for the newly picked coin
-                    fetchCoinPrice(selectedSymbol)
-                }
-
-        // Set default text so something is visible
-                coinAuto.setText(selectedSymbol, /* filter= */ false)
-
+        // show the symbol at the top
+        coinNameTextView.text = selectedSymbol
 
         val spinner = view.findViewById<Spinner>(R.id.spinnerValues)
-        val items = arrayOf(3, 5)
-
-
-        val adapter = ArrayAdapter(requireContext(), R.layout.spinner_item, items)
-        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-        spinner.adapter = adapter
-        spinner.setSelection(0)
-
         val rangeTopEditText = view.findViewById<EditText>(R.id.editTextRangeTop)
         val rangeLowEditText = view.findViewById<EditText>(R.id.editTextRangeLow)
         val buyButton = view.findViewById<Button>(R.id.buttonBuy)
         val sellButton = view.findViewById<Button>(R.id.buttonSell)
-        coinPriceTextView = view.findViewById<TextView>(R.id.coinPrice)
+        val backButton = view.findViewById<ImageView>(R.id.backButton)
+
+        // simple spinner values
+        val items = arrayOf(3, 5)
+        val spinnerAdapter = android.widget.ArrayAdapter(
+            requireContext(),
+            R.layout.spinner_item,
+            items
+        )
+        spinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+        spinner.adapter = spinnerAdapter
+        spinner.setSelection(0)
 
         TradeUtils.fetchBalance { balance ->
-            totalBalance=balance
-
+            totalBalance = balance
             Log.d("SplitFragment", "Fetched balance: $totalBalance")
         }
 
@@ -107,17 +92,18 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
             showSlTpDialog()
         }
 
+        backButton.setOnClickListener {
+            (requireActivity() as MainActivity).viewPager.currentItem = 3
+        }
+
         buyButton.setOnClickListener {
-            val risk = view.findViewById<TextView>(R.id.risk).text.toString()
-            Log.d("SplitFragment", "risk: $risk")
+            val riskStr = view.findViewById<TextView>(R.id.risk).text.toString()
+            val risk = riskStr.toFloatOrNull() ?: 0f
+
             val rangeTop = rangeTopEditText.text.toString().toFloatOrNull() ?: 0f
             val rangeLow = rangeLowEditText.text.toString().toFloatOrNull() ?: 0f
             val numberOfValues = spinner.selectedItem.toString().toIntOrNull() ?: 0
             val sl = stopLoss?.toFloatOrNull()
-            Log.d("SplitFragment", "rangeTop: $rangeTop")
-            Log.d("SplitFragment", "rangeLow: $rangeLow")
-            Log.d("SplitFragment", "numberOfValues: $numberOfValues")
-            Log.d("SplitFragment", "sl: $sl")
 
             if (sl != null && totalBalance.isNotEmpty()) {
                 val positionData = calculatePositionSizes(
@@ -126,23 +112,28 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
                     sl = sl,
                     totalBalance = totalBalance.toFloat(),
                     numberOfBids = numberOfValues,
-                    totalRiskPercent = risk.toFloatOrNull() ?: 0f
+                    totalRiskPercent = risk
                 )
 
                 for ((price, amount) in positionData) {
                     val intAmount = amount.toInt()
-                    Log.d("SplitFragment", "amount: $intAmount")
                     placeATrade(price.toString(), intAmount.toString(), Side.Buy)
                 }
 
-                closekey(it)
+                closeKeyboard(it)
             } else {
-                Toast.makeText(requireContext(), "Set a valid Stop Loss and wait for balance", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Set a valid Stop Loss and wait for balance",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
 
         sellButton.setOnClickListener {
-            val risk = view.findViewById<TextView>(R.id.risk).text.toString()
+            val riskStr = view.findViewById<TextView>(R.id.risk).text.toString()
+            val risk = riskStr.toFloatOrNull() ?: 0f
+
             val rangeTop = rangeTopEditText.text.toString().toFloatOrNull() ?: 0f
             val rangeLow = rangeLowEditText.text.toString().toFloatOrNull() ?: 0f
             val numberOfValues = spinner.selectedItem.toString().toIntOrNull() ?: 0
@@ -155,7 +146,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
                     sl = sl,
                     totalBalance = totalBalance.toFloat(),
                     numberOfBids = numberOfValues,
-                    totalRiskPercent = risk.toFloatOrNull() ?: 0f
+                    totalRiskPercent = risk
                 )
 
                 for ((price, amount) in positionData) {
@@ -163,17 +154,21 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
                     placeATrade(price.toString(), intAmount.toString(), Side.Sell)
                 }
 
-                closekey(it)
+                closeKeyboard(it)
             } else {
-                Toast.makeText(requireContext(), "Set a valid Stop Loss and wait for balance", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Set a valid Stop Loss and wait for balance",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
 
-
-
-        fetchPerpetualCoins()
+        // start price polling
         startPriceUpdates()
     }
+
+    // ---------------- SL/TP dialog ----------------
 
     private fun showSlTpDialog() {
         val dialogView = layoutInflater.inflate(R.layout.sl_tp_dialog, null)
@@ -189,9 +184,8 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
             val slValue = slInput.text.toString().trim()
             val tpValue = tpInput.text.toString().trim()
 
-            stopLoss = if (slValue.isNotEmpty()) slValue else null
-            takeProfit = if (tpValue.isNotEmpty()) tpValue else null
-
+            stopLoss = slValue.ifEmpty { null }
+            takeProfit = tpValue.ifEmpty { null }
 
             Toast.makeText(
                 requireContext(),
@@ -203,15 +197,13 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         }
     }
 
-    private fun leverage(midBid: Float, sl: Float) {
-        // Calculate SL % using the formula
-        val slPercentage = ((midBid - sl) / midBid) * 100
+    // ---------------- helpers ----------------
 
-        // Log the result
+    private fun leverage(midBid: Float, sl: Float) {
+        val slPercentage = ((midBid - sl) / midBid) * 100
         Log.d("leverage", "Mid bid: $midBid, SL: $sl, SL Percentage: $slPercentage%")
 
-        if (slPercentage>5)
-        {
+        if (slPercentage > 5) {
             val multiplier = (50 / slPercentage).toInt()
             val bybitClient = getByBitClient()
             val leverageParams = LeverageParams(
@@ -224,8 +216,6 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
                 override fun onSuccess(result: APIResponseV5) {
                     Log.d("Leverage", "Leverage set successfully: $result")
                     showTradeResultDialog("Success", "Leverage set successfully for $selectedSymbol.")
-                    Handler(Looper.getMainLooper()).postDelayed({
-                    }, 1500)
                 }
 
                 override fun onError(error: Throwable) {
@@ -233,7 +223,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
                     showTradeResultDialog("Error", "Failed to set leverage: ${error.message}")
                 }
             }
-            bybitClient.positionClient.setLeverage(leverageParams,callback)
+            bybitClient.positionClient.setLeverage(leverageParams, callback)
         }
     }
 
@@ -248,7 +238,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         val riskPerBid = (totalBalance * (totalRiskPercent / 100f)) / numberOfBids
         val bidPrices = calculateNumbers(low, top, numberOfBids)
 
-        val midBid=bidPrices.size / 2
+        val midBid = bidPrices.size / 2
         val midBidPrice = bidPrices[midBid]
         leverage(midBidPrice, sl)
 
@@ -259,15 +249,14 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         }
     }
 
-
-    private fun closekey(view: View) {
-        val imm = requireActivity().getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(view.windowToken, 0)
-    }
-
     private fun calculateNumbers(low: Float, top: Float, count: Int): List<Float> {
         val step = (top - low) / (count - 1)
         return List(count) { low + it * step }
+    }
+
+    private fun closeKeyboard(view: View) {
+        val imm = requireActivity().getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
     private fun getByBitClient(): ByBitRestClient {
@@ -286,18 +275,16 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
             orderType = OrderType.Limit,
             price = price,
             qty = amount,
-            stopLoss= stopLoss,
-            takeProfit= takeProfit,
+            stopLoss = stopLoss,
+            takeProfit = takeProfit,
             timeInForce = TimeInForce.GTC,
             reduceOnly = false
         )
 
         val callback = object : ByBitRestApiCallback<PlaceOrderResponse> {
             override fun onSuccess(result: PlaceOrderResponse) {
-                Log.d("Trade", "Trade placed successfully: ${result}")
+                Log.d("Trade", "Trade placed successfully: $result")
                 showTradeResultDialog("Success", "Trade placed successfully for $selectedSymbol at $price.")
-                Handler(Looper.getMainLooper()).postDelayed({
-                }, 1500)
             }
 
             override fun onError(error: Throwable) {
@@ -319,31 +306,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         }
     }
 
-    private fun fetchPerpetualCoins() {
-        val bybitClient = getByBitClient()
-
-        val params = InstrumentsInfoParams(
-            category = Category.linear,
-            symbol = null,
-            limit = 1000
-        )
-
-        val callback = object : ByBitRestApiCallback<InstrumentsInfoResponse<InstrumentsInfoResultItem>> {
-            override fun onSuccess(result: InstrumentsInfoResponse<InstrumentsInfoResultItem>) {
-                coinList.clear()
-                result.result?.list?.forEach { instrument ->
-                    coinList.add(instrument.symbol)
-                }
-                coinAdapter.notifyDataSetChanged()
-            }
-
-            override fun onError(error: Throwable) {
-                Log.e("SupportedInstrument", "Error fetching supported instruments: ${error.message}")
-            }
-        }
-
-        bybitClient.marketClient.getInstrumentsInfo(params, callback)
-    }
+    // ---------------- price updates ----------------
 
     private fun startPriceUpdates() {
         handler.post(object : Runnable {
@@ -354,67 +317,30 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         })
     }
 
-
-    private fun cancelOrder(order: OpenOrder) {
-        val bybitClient = getByBitClient()
-
-        val params = bybit.sdk.rest.order.CancelOrderParams(
-            category = Category.linear,
-            symbol = order.symbol,
-            orderId = order.orderId
-        )
-
-        val callback = object : ByBitRestApiCallback<bybit.sdk.rest.order.CancelOrderResponse> {
-            override fun onSuccess(result: bybit.sdk.rest.order.CancelOrderResponse) {
-                Log.d("CancelOrder", "Success: ${result.result.orderId}")
-                activity?.runOnUiThread {
-                    showTradeResultDialog("Order Cancelled", "Successfully cancelled order: ${order.orderId}")
-                }
-            }
-
-            override fun onError(error: Throwable) {
-                Log.e("CancelOrder", "Error: ${error.message}")
-                activity?.runOnUiThread {
-                    showTradeResultDialog("Cancel Failed", "Failed to cancel order: ${error.message}")
-                }
-            }
-        }
-
-        bybitClient.orderClient.cancelOrder(params, callback)
-    }
-
-    fun fetchCoinPrice(symbol: String) {
+    private fun fetchCoinPrice(symbol: String) {
         val client = OkHttpClient()
+        val url = "https://api-testnet.bybit.com/v5/market/tickers?category=linear&symbol=$symbol"
 
-        // Define the URL and the parameters for the request
-        val url = "https://api-testnet.bybit.com/v5/market/tickers?category=inverse&symbol=$symbol"
-
-        // Build the GET request
         val request = Request.Builder()
             .url(url)
             .build()
 
-        // Execute the request on a background thread to avoid blocking the main UI thread
         Thread {
             try {
                 val response: Response = client.newCall(request).execute()
 
                 if (response.isSuccessful) {
-                    // Parse the response JSON
                     val jsonResponse = JSONObject(response.body?.string() ?: "")
                     val result = jsonResponse.getJSONObject("result")
 
-                    // Extract information from the response
                     if (result.length() > 0) {
                         val ticker = result.getJSONArray("list").getJSONObject(0)
                         val lastPrice = ticker.getString("lastPrice")
 
-                        // Update UI on the main thread
                         activity?.runOnUiThread {
-                            coinPriceTextView.text = "Price: $lastPrice"
+                            coinPriceTextView.text = lastPrice
                         }
 
-                        // Log the result (for debugging)
                         Log.d("CoinPrice", "Last price for $symbol: $lastPrice")
                     } else {
                         Log.d("CoinPrice", "No data available for $symbol.")

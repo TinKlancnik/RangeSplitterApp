@@ -8,13 +8,14 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 class MainPageAdapter(fragmentManager: FragmentManager, lifecycle: Lifecycle) :
     FragmentStateAdapter(fragmentManager, lifecycle) {
 
-    override fun getItemCount(): Int = 3 // Number of fragments
+    override fun getItemCount(): Int = 4 // Number of fragments
 
     override fun createFragment(position: Int): Fragment {
         return when (position) {
             0 -> MenuFragment()
             1 -> SplitFragment()
             2 -> ChartFragment()
+            3 -> CoinSelectFragment()
             else -> MenuFragment()
         }
     }

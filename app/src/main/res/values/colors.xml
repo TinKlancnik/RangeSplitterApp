@@ -9,8 +9,8 @@
     <color name="white">#FFFFFFFF</color>
 
     //Color Palette
-    <color name="primary">#1B2B40</color>
-    <color name="cardInputBG">#22354D</color>
+    <color name="primary">#0A0E27</color>
+    <color name="cardInputBG">#1E2441</color>
     <color name="primaryAccent">#5DADE2</color>
     <color name="highlightCTA">#00C9A7</color>
     <color name="card">#4D00C9A7</color>
@@ -29,4 +29,6 @@
     <color name="colorInactive">#AAB7B8</color>
     <color name="vibrant_green">#1db31d</color>
     <color name="vibrant_red">#c41f0c</color>
+
 </resources>
+

@@ -48,4 +48,5 @@
         <item name="hintTextColor">@color/textMuted</item>
         <item name="boxBackgroundColor">@color/cardInputBG</item>
     </style>
+
 </resources>

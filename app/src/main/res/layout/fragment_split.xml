@@ -9,42 +9,83 @@
     android:paddingHorizontal="24dp"
     android:paddingTop="24dp">
 
-    <!-- Coin Dropdown and Price -->
-    <com.google.android.material.textfield.MaterialAutoCompleteTextView
-        android:id="@+id/coinList"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:backgroundTint="@color/textPrimary"
-        android:hint="Select coin"
-        android:padding="8dp"
-        android:textSize="14sp"
+    <ImageButton
+        android:id="@+id/backButton"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:background="@android:color/transparent"
+        android:padding="4dp"
+        android:src="@drawable/baseline_arrow_back_ios_new_24"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/coinPrice"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/textPrimary" />
+
+
+    <!-- COIN NAME (centered like in mockup) -->
+    <TextView
+        android:id="@+id/coinName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:text="BTCUSDT"
+        android:textColor="@color/textPrimary"
+        android:textSize="30sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- PRICE (centered under name) -->
     <TextView
         android:id="@+id/coinPrice"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:text="--"
         android:textColor="@color/textPrimary"
-        android:textSize="16sp"
+        android:textSize="25sp"
         android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="@+id/coinList"
-        app:layout_constraintBottom_toBottomOf="@+id/coinList"
+        app:layout_constraintTop_toBottomOf="@id/coinName"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Spinners Row -->
+
+    <!-- RANGE HIGH -->
+    <EditText
+        android:id="@+id/editTextRangeTop"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="80dp"
+        android:hint="Range High"
+        android:inputType="numberDecimal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/coinPrice" />
+
+    <!-- RANGE LOW -->
+    <EditText
+        android:id="@+id/editTextRangeLow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:hint="Range Low"
+        android:inputType="numberDecimal"
+        app:layout_constraintTop_toBottomOf="@id/editTextRangeTop"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- SPINNER + RISK ROW (now correctly placed UNDER RangeLow) -->
     <LinearLayout
         android:id="@+id/spinnerRow"
         android:layout_width="0dp"
         android:layout_height="36dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@id/coinList"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:gravity="center">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/editTextRangeLow">
 
         <Spinner
             android:id="@+id/spinnerValues"
@@ -60,53 +101,34 @@
             android:layout_weight="1"
             android:hint="Total Risk %"
             android:inputType="numberDecimal"
-            android:textSize="14dp"/>
+            android:textSize="14sp" />
     </LinearLayout>
 
-    <!-- Inputs -->
-    <EditText
-        android:id="@+id/editTextRangeTop"
-        style="@style/CustomEditTextStyle"
-        android:layout_marginTop="16dp"
-        android:hint="Range High"
-        android:inputType="numberDecimal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/spinnerRow" />
 
-    <EditText
-        android:id="@+id/editTextRangeLow"
-        style="@style/CustomEditTextStyle"
-        android:layout_marginTop="12dp"
-        android:hint="Range Low"
-        android:inputType="numberDecimal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/editTextRangeTop" />
-
-    <!-- Action Buttons -->
+    <!-- TP/SL BUTTON -->
     <Button
         android:id="@+id/setSlTpButton"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="48dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="16dp"
         android:backgroundTint="@color/black"
         android:text="Set SL / TP"
         android:textColor="@color/buttonTextColor"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/spinnerRow"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/editTextRangeLow" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- BUY / SELL BUTTONS -->
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="12dp"
         android:gravity="center"
         android:orientation="horizontal"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/setSlTpButton"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/setSlTpButton">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <Button
             android:id="@+id/buttonBuy"
@@ -130,19 +152,5 @@
             android:text="Sell / Short"
             android:textColor="@color/buttonTextColor" />
     </LinearLayout>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/riskCard"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/linearLayout"
-        app:cardBackgroundColor="@color/primary"
-        app:cardElevation="0dp"
-        app:strokeColor="@color/colorInactive"
-        app:strokeWidth="1dp"
-        android:padding="12dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

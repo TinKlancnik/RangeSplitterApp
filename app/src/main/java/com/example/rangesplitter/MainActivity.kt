@@ -4,42 +4,49 @@ import android.content.res.ColorStateList
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.viewpager2.widget.ViewPager2
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.viewpager2.widget.ViewPager2
 import com.example.rangesplitter.UI.NavigationHelper
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var viewPager: ViewPager2
+    lateinit var viewPager: ViewPager2
+        private set
+
     private lateinit var bottomNav: BottomNavigationView
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+
+    // 👇 this is what SplitFragment will read
+    var selectedSymbolForSplit: String? = null
+
+    companion object {
+        private const val ARG_SYMBOL = "symbol"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportActionBar?.hide()
         setContentView(R.layout.activity_main)
 
-        // Find the bottom navigation view, ViewPager2, and SwipeRefreshLayout
+        // Views
         viewPager = findViewById(R.id.viewPager)
         bottomNav = findViewById(R.id.bottom_navigation)
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
 
-        // Set up the bottom navigation and ViewPager2
+        // Set up ViewPager + BottomNav
         NavigationHelper.setupBottomNav(this, bottomNav, viewPager)
 
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-
-                // Disable swipe refresh if ChartFragment is selected (replace 1 with its actual index)
+                // Disable swipe refresh for Chart tab (index 2)
                 swipeRefreshLayout.isEnabled = position != 2
             }
         })
 
-        // Explicitly set the initial fragment if needed
         if (savedInstanceState == null) {
-            viewPager.currentItem = 0 // Set initial fragment (MenuFragment)
+            viewPager.currentItem = 0 // MenuFragment
         }
 
         swipeRefreshLayout.setOnRefreshListener {
@@ -50,18 +57,25 @@ class MainActivity : AppCompatActivity() {
         setupBottomNavActiveColor()
     }
 
-    // This function refreshes the current fragment by notifying ViewPager2 to reload
+    // 👇 called from CoinSelectFragment when a coin is clicked
+    fun openSplitForSymbol(symbol: String) {
+        selectedSymbolForSplit = symbol
+        viewPager.currentItem = 1
+    }
+
+    fun openCoinSelect() {
+        viewPager.currentItem = 3
+    }
+
     private fun refreshCurrentFragment() {
         val currentFragment =
             supportFragmentManager.findFragmentByTag("f${viewPager.currentItem}") as? RefreshableFragment
         currentFragment?.refreshData()
     }
 
-
-    // This function sets the active color of the BottomNavigationView items
     private fun setupBottomNavActiveColor() {
-        val activeColor = ContextCompat.getColor(this, R.color.colorActive)  // Active color
-        val inactiveColor = ContextCompat.getColor(this, R.color.colorInactive)  // Inactive color
+        val activeColor = ContextCompat.getColor(this, R.color.colorActive)
+        val inactiveColor = ContextCompat.getColor(this, R.color.colorInactive)
 
         bottomNav.itemIconTintList = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),

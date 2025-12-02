@@ -10,23 +10,25 @@
     android:paddingHorizontal="16dp">
 
     <!-- 1) TITLE -->
+
+    <!-- 2) FILTER BUTTON GROUP -->
     <TextView
         android:id="@+id/titleName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Range Splitter"
         android:textColor="@color/textPrimary"
-        android:textStyle="bold"
         android:textSize="24sp"
-        app:layout_constraintTop_toTopOf="parent"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.022"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- 2) FILTER BUTTON GROUP -->
-    <com.google.android.material.button.MaterialButtonToggleGroup
+    <com.google.android.material.chip.ChipGroup
         android:id="@+id/filterGroup"
         android:layout_width="wrap_content"
-        android:layout_height="36dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         app:singleSelection="true"
         app:selectionRequired="true"
@@ -34,42 +36,55 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnVolume"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipVolume"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:text="Volume"
             android:textSize="12sp"
-            app:cornerRadius="18dp" />
+            android:layout_marginEnd="8dp"
+            app:chipBackgroundColor="@color/chip_background_color"
+            android:textColor="@color/chip_text_color"
+            app:checkedIconEnabled="false" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnChange"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipChange"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:text="24h %"
             android:textSize="12sp"
-            app:cornerRadius="18dp" />
+            android:layout_marginEnd="8dp"
+            app:chipBackgroundColor="@color/chip_background_color"
+            android:textColor="@color/chip_text_color"
+            app:checkedIconEnabled="false" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnVolatility"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipVolatility"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:text="Volatility"
             android:textSize="12sp"
-            app:cornerRadius="18dp" />
+            android:layout_marginEnd="8dp"
+            app:chipBackgroundColor="@color/chip_background_color"
+            android:textColor="@color/chip_text_color"
+            app:checkedIconEnabled="false" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAlphabetical"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipAlphabetical"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:text="A–Z"
             android:textSize="12sp"
-            app:cornerRadius="18dp" />
-    </com.google.android.material.button.MaterialButtonToggleGroup>
+            app:chipBackgroundColor="@color/chip_background_color"
+            android:textColor="@color/chip_text_color"
+            app:checkedIconEnabled="false" />
+    </com.google.android.material.chip.ChipGroup>
+
 
     <!-- 3) SEARCH BAR -->
     <com.google.android.material.textfield.TextInputLayout
