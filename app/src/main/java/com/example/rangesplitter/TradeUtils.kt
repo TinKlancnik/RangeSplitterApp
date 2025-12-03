@@ -21,6 +21,30 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import org.json.JSONObject
+import java.util.Locale
+
+// REMOVE this: import OpenPositionsAdapter
+// REMOVE these: import com.example.rangesplitter.CoinSelectFragment.Coin
+//               import com.example.rangesplitter.CoinSelectFragment.SortMode
+
+// ---------- shared models for coins ----------
+
+data class Coin(
+    val symbol: String,
+    val priceText: String,
+    val changeText: String,
+    val changeValue: Double
+)
+
+enum class SortMode {
+    VOLUME, CHANGE, VOLATILITY, ALPHA
+}
+
+// ---------- other models you already had ----------
 
 data class OpenOrder(
     val symbol: String,
@@ -51,6 +75,10 @@ data class Candle(
 
 object TradeUtils {
 
+    // reuse single client + main-thread handler
+    private val httpClient = OkHttpClient()
+    private val mainHandler = Handler(Looper.getMainLooper())
+
     fun fetchOpenOrders(
         recyclerView: RecyclerView
     ) {
@@ -73,7 +101,9 @@ object TradeUtils {
 
                 recyclerView.post {
                     val adapter = OpenOrdersAdapter(openOrders) { order ->
-                        cancelOrder(order, recyclerView,
+                        cancelOrder(
+                            order,
+                            recyclerView,
                             { Log.d("CancelOrder", it) },
                             { Log.e("CancelOrder", it) }
                         )
@@ -226,4 +256,110 @@ object TradeUtils {
         }
     }
 
+    fun fetchTopCoinsWithPrices(
+        sortMode: SortMode,
+        limit: Int = 50,
+        onSuccess: (List<Coin>) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val url = "https://api-testnet.bybit.com/v5/market/tickers?category=linear"
+
+        val request = Request.Builder()
+            .url(url)
+            .build()
+
+        Thread {
+            try {
+                val response: Response = httpClient.newCall(request).execute()
+
+                if (response.isSuccessful) {
+                    val jsonResponse = JSONObject(response.body?.string() ?: "")
+                    val result = jsonResponse.getJSONObject("result")
+                    val list = result.getJSONArray("list")
+
+                    data class RawCoin(
+                        val symbol: String,
+                        val lastPrice: String,
+                        val turnover24h: Double,
+                        val volume24h: Double,
+                        val change24hRate: Double,
+                        val volatility: Double
+                    )
+
+                    val rawCoins = mutableListOf<RawCoin>()
+
+                    for (i in 0 until list.length()) {
+                        val ticker = list.getJSONObject(i)
+                        val symbol = ticker.getString("symbol")
+                        val lastPrice = ticker.getString("lastPrice")
+
+                        val turnoverStr = ticker.optString("turnover24h", "0")
+                        val volumeStr = ticker.optString("volume24h", "0")
+                        val changeStr = ticker.optString("price24hPcnt", "0")
+                        val highStr = ticker.optString("highPrice24h", "0")
+                        val lowStr = ticker.optString("lowPrice24h", "0")
+
+                        val turnover = turnoverStr.toDoubleOrNull() ?: 0.0
+                        val volume = volumeStr.toDoubleOrNull() ?: 0.0
+                        val changeRate = changeStr.toDoubleOrNull() ?: 0.0   // 0.01 = 1%
+                        val high = highStr.toDoubleOrNull() ?: 0.0
+                        val low = lowStr.toDoubleOrNull() ?: 0.0
+                        val volatility = high - low
+
+                        rawCoins.add(
+                            RawCoin(
+                                symbol = symbol,
+                                lastPrice = lastPrice,
+                                turnover24h = turnover,
+                                volume24h = volume,
+                                change24hRate = changeRate,
+                                volatility = volatility
+                            )
+                        )
+                    }
+
+                    val filtered = rawCoins.filter { it.symbol.endsWith("USDT") }
+
+                    val sorted = when (sortMode) {
+                        SortMode.VOLUME -> filtered.sortedByDescending { it.turnover24h }
+                        SortMode.CHANGE -> filtered.sortedByDescending { it.change24hRate }
+                        SortMode.VOLATILITY -> filtered.sortedByDescending { it.volatility }
+                        SortMode.ALPHA -> filtered.sortedBy { it.symbol }
+                    }
+
+                    val top = sorted.take(limit)
+
+                    val newCoins = top.map { raw ->
+                        val pct = raw.change24hRate * 100.0
+                        val pctText = if (pct >= 0) {
+                            String.format(Locale.US, "+%.2f%%", pct)
+                        } else {
+                            String.format(Locale.US, "%.2f%%", pct)
+                        }
+
+                        Coin(
+                            symbol = raw.symbol,
+                            priceText = raw.lastPrice,
+                            changeText = pctText,
+                            changeValue = pct
+                        )
+                    }
+
+                    mainHandler.post {
+                        onSuccess(newCoins)
+                    }
+
+                    Log.d("CoinList", "Loaded ${newCoins.size} coins, mode=$sortMode")
+                } else {
+                    val msg = "Failed to fetch tickers: ${response.code}"
+                    Log.d("CoinList", msg)
+                    mainHandler.post { onError(msg) }
+                }
+            } catch (e: Exception) {
+                val msg = "Error: ${e.message}"
+                Log.d("CoinList", msg)
+                mainHandler.post { onError(msg) }
+            }
+        }.start()
+    }
 }
