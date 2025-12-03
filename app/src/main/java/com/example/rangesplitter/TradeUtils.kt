@@ -27,12 +27,6 @@ import okhttp3.Response
 import org.json.JSONObject
 import java.util.Locale
 
-// REMOVE this: import OpenPositionsAdapter
-// REMOVE these: import com.example.rangesplitter.CoinSelectFragment.Coin
-//               import com.example.rangesplitter.CoinSelectFragment.SortMode
-
-// ---------- shared models for coins ----------
-
 data class Coin(
     val symbol: String,
     val priceText: String,
@@ -301,7 +295,7 @@ object TradeUtils {
 
                         val turnover = turnoverStr.toDoubleOrNull() ?: 0.0
                         val volume = volumeStr.toDoubleOrNull() ?: 0.0
-                        val changeRate = changeStr.toDoubleOrNull() ?: 0.0   // 0.01 = 1%
+                        val changeRate = changeStr.toDoubleOrNull() ?: 0.0
                         val high = highStr.toDoubleOrNull() ?: 0.0
                         val low = lowStr.toDoubleOrNull() ?: 0.0
                         val volatility = high - low
