@@ -7,7 +7,7 @@
 
     <!-- Profile Image -->
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/userImage"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_margin="20dp"
@@ -18,7 +18,7 @@
 
     <!-- User Name -->
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/userName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Tin Klančnik"
@@ -26,9 +26,9 @@
         android:textStyle="bold"
         android:textColor="@color/textPrimary"
         android:layout_marginStart="12dp"
-        app:layout_constraintStart_toEndOf="@id/imageView"
-        app:layout_constraintTop_toTopOf="@id/imageView"
-        app:layout_constraintBottom_toBottomOf="@id/imageView"
+        app:layout_constraintStart_toEndOf="@id/userImage"
+        app:layout_constraintTop_toTopOf="@id/userImage"
+        app:layout_constraintBottom_toBottomOf="@id/userImage"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Balance -->
@@ -46,7 +46,7 @@
         app:cardCornerRadius="16dp"
         app:cardUseCompatPadding="true"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView">   <!-- dark navy -->
+        app:layout_constraintTop_toBottomOf="@+id/userImage">   <!-- dark navy -->
 
         <LinearLayout
             android:layout_width="match_parent"

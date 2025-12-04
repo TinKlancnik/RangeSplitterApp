@@ -9,7 +9,6 @@
     android:paddingHorizontal="16dp"
     android:paddingVertical="10dp">
 
-    <!-- LEFT: SYMBOL -->
     <TextView
         android:id="@+id/txtCoinSymbol"
         android:layout_width="0dp"
@@ -23,7 +22,6 @@
         app:layout_constraintEnd_toStartOf="@id/txtCoinPrice"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- LEFT: FULL NAME (takes leftover space, truncates if too long) -->
     <TextView
         android:id="@+id/txtCoinName"
         android:layout_width="0dp"
@@ -38,7 +36,7 @@
         app:layout_constraintStart_toStartOf="@id/txtCoinSymbol"
         app:layout_constraintEnd_toStartOf="@id/txtCoinPrice" />
 
-    <!-- RIGHT: PRICE -->
+
     <TextView
         android:id="@+id/txtCoinPrice"
         android:layout_width="wrap_content"
@@ -51,7 +49,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- RIGHT: % CHANGE -->
     <TextView
         android:id="@+id/txtCoinChange"
         android:layout_width="wrap_content"

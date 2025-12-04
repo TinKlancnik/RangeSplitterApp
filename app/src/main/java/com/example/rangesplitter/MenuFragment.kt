@@ -1,10 +1,8 @@
 package com.example.rangesplitter
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.View
-import android.widget.Button
 import android.widget.TextView
 import androidx.viewpager2.widget.ViewPager2
 import com.example.rangesplitter.UI.ViewPagerAdapter
@@ -15,6 +13,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 class MenuFragment : Fragment(R.layout.fragment_menu) {
 
     private lateinit var balanceTextView: TextView
+    private lateinit var userName: TextView
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
 
@@ -23,12 +22,10 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
 
         balanceTextView = view.findViewById(R.id.balanceTextView)
 
-
         TradeUtils.fetchBalance { balance ->
             balanceTextView.text = "$balance USD"
         }
 
-        // Initialize ViewPager + Tabs
         viewPager = view.findViewById(R.id.viewPager)
         tabLayout = view.findViewById(R.id.tabLayout)
 
@@ -42,7 +39,5 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
                 else -> ""
             }
         }.attach()
-
     }
 }
-

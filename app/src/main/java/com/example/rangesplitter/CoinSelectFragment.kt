@@ -55,7 +55,7 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
             val colorRes = if (coin.changeValue >= 0.0) {
                 R.color.vibrant_green
             } else {
-                R.color.red   // your red color
+                R.color.vibrant_red   // your red color
             }
             holder.change.setTextColor(ctx.getColor(colorRes))
 

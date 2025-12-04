@@ -58,10 +58,10 @@
 
     <!-- Login Button -->
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/loginButton"
+        android:id="@+id/registerButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Login"
+        android:text="Register"
         android:textColor="@color/buttonTextColor"
         android:backgroundTint="@color/buttonDefault"/>
 
@@ -71,7 +71,7 @@
         android:layout_height="wrap_content"
         android:textColor="@color/textMuted"
         android:gravity="center"
-        android:text="Don't have an account? Sign up" />
+        android:text="Already have an account? Sign in" />
 
 
 </LinearLayout>
