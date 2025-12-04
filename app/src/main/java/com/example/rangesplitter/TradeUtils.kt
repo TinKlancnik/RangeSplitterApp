@@ -31,7 +31,12 @@ data class Coin(
     val symbol: String,
     val priceText: String,
     val changeText: String,
-    val changeValue: Double
+    val changeValue: Double,
+    val high24h: Double,
+    val low24h: Double,
+    val volume24h: Double,
+    val turnover24h: Double,
+    val fundingRate: Double
 )
 
 enum class SortMode {
@@ -277,7 +282,10 @@ object TradeUtils {
                         val turnover24h: Double,
                         val volume24h: Double,
                         val change24hRate: Double,
-                        val volatility: Double
+                        val volatility: Double,
+                        val high: Double,
+                        val low: Double,
+                        val fundingRate: Double
                     )
 
                     val rawCoins = mutableListOf<RawCoin>()
@@ -292,6 +300,7 @@ object TradeUtils {
                         val changeStr = ticker.optString("price24hPcnt", "0")
                         val highStr = ticker.optString("highPrice24h", "0")
                         val lowStr = ticker.optString("lowPrice24h", "0")
+                        val fundingRateStr = ticker.optString("fundingRate", "0")
 
                         val turnover = turnoverStr.toDoubleOrNull() ?: 0.0
                         val volume = volumeStr.toDoubleOrNull() ?: 0.0
@@ -299,6 +308,7 @@ object TradeUtils {
                         val high = highStr.toDoubleOrNull() ?: 0.0
                         val low = lowStr.toDoubleOrNull() ?: 0.0
                         val volatility = high - low
+                        val fundingRate =fundingRateStr.toDoubleOrNull()?:0.0
 
                         rawCoins.add(
                             RawCoin(
@@ -307,7 +317,10 @@ object TradeUtils {
                                 turnover24h = turnover,
                                 volume24h = volume,
                                 change24hRate = changeRate,
-                                volatility = volatility
+                                volatility = volatility,
+                                high = high,
+                                low = low,
+                                fundingRate=fundingRate
                             )
                         )
                     }
@@ -335,7 +348,12 @@ object TradeUtils {
                             symbol = raw.symbol,
                             priceText = raw.lastPrice,
                             changeText = pctText,
-                            changeValue = pct
+                            changeValue = pct,
+                            high24h = raw.high,
+                            low24h = raw.low,
+                            volume24h = raw.volume24h,
+                            turnover24h = raw.turnover24h,
+                            fundingRate = raw.fundingRate
                         )
                     }
 
@@ -356,4 +374,15 @@ object TradeUtils {
             }
         }.start()
     }
+    fun formatCompactNumber(value: Double): String {
+        val abs = kotlin.math.abs(value)
+
+        return when {
+            abs >= 1_000_000_000 -> String.format("%.2fB", value / 1_000_000_000)
+            abs >= 1_000_000     -> String.format("%.2fM", value / 1_000_000)
+            abs >= 1_000         -> String.format("%.2fK", value / 1_000)
+            else                 -> String.format("%.2f", value)
+        }
+    }
+
 }

@@ -133,7 +133,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="$42,067.72"
-                    android:textColor="#E6544C"
+                    android:textColor="@color/vibrant_red"
                     android:textSize="12sp" />
             </LinearLayout>
 
