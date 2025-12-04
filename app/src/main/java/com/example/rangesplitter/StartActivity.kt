@@ -41,7 +41,6 @@ class StartActivity : AppCompatActivity() {
             auth.signInWithEmailAndPassword(email, pass)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
-                        // ✅ Login SUCCESS → go to MainActivity
                         startActivity(Intent(this, MainActivity::class.java))
                         finish()
                     } else {
