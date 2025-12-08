@@ -170,7 +170,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="MKT CAP"
+                    android:text="FUNDING RATE"
                     android:textColor="#7C8899"
                     android:textSize="10sp" />
 
@@ -186,10 +186,10 @@
 
         <!-- TIMEFRAME TOGGLES -->
 
-        <com.google.android.material.button.MaterialButtonToggleGroup
+        <com.google.android.material.chip.ChipGroup
             android:id="@+id/timeframeGroup"
-            android:layout_width="wrap_content"
-            android:layout_height="32dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             app:singleSelection="true"
             app:selectionRequired="true"
@@ -197,69 +197,82 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <com.google.android.material.button.MaterialButton
+            <com.google.android.material.chip.Chip
                 android:id="@+id/btn1m"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:text="1m"
-                android:textSize="11sp"
-                app:cornerRadius="16dp" />
+                android:textSize="10sp"
+                android:layout_marginEnd="8dp"
+                app:chipBackgroundColor="@color/chip_background_color"
+                app:chipSurfaceColor="@android:color/transparent"
+                android:textColor="@color/chip_text_color"
+                app:checkedIconEnabled="false" />
 
-            <com.google.android.material.button.MaterialButton
+
+            <com.google.android.material.chip.Chip
                 android:id="@+id/btn5m"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:text="5m"
-                android:textSize="11sp"
-                app:cornerRadius="16dp" />
+                android:textSize="10sp"
+                android:layout_marginEnd="8dp"
+                app:chipBackgroundColor="@color/chip_background_color"
+                android:textColor="@color/chip_text_color"
+                app:chipSurfaceColor="@android:color/transparent"
+                app:checkedIconEnabled="false" />
 
-            <com.google.android.material.button.MaterialButton
+            <com.google.android.material.chip.Chip
                 android:id="@+id/btn15m"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:text="15m"
-                android:textSize="11sp"
-                app:cornerRadius="16dp" />
+                android:textSize="10sp"
+                android:layout_marginEnd="8dp"
+                app:chipBackgroundColor="@color/chip_background_color"
+                android:textColor="@color/chip_text_color"
+                app:chipSurfaceColor="@android:color/transparent"
+                app:checkedIconEnabled="false" />
 
-            <com.google.android.material.button.MaterialButton
+            <com.google.android.material.chip.Chip
                 android:id="@+id/btn1h"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:text="1H"
-                android:textSize="11sp"
-                app:cornerRadius="16dp" />
+                android:layout_height="wrap_content"
+                android:text="1h"
+                android:textSize="10sp"
+                app:chipBackgroundColor="@color/chip_background_color"
+                android:textColor="@color/chip_text_color"
+                app:chipSurfaceColor="@android:color/transparent"
+                app:checkedIconEnabled="false" />
 
-            <com.google.android.material.button.MaterialButton
+            <com.google.android.material.chip.Chip
                 android:id="@+id/btn4h"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:text="4H"
-                android:textSize="11sp"
-                app:cornerRadius="16dp" />
+                android:layout_height="wrap_content"
+                android:text="4h"
+                android:textSize="10sp"
+                app:chipBackgroundColor="@color/chip_background_color"
+                app:chipSurfaceColor="@android:color/transparent"
+                android:textColor="@color/chip_text_color"
+                app:checkedIconEnabled="false" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn1d"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            <com.google.android.material.chip.Chip
+                android:id="@+id/btnD"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:text="1D"
-                android:textSize="11sp"
-                app:cornerRadius="16dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn1w"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:text="1W"
-                android:textSize="11sp"
-                app:cornerRadius="16dp" />
-        </com.google.android.material.button.MaterialButtonToggleGroup>
+                android:layout_height="wrap_content"
+                android:text="D"
+                android:textSize="10sp"
+                app:chipBackgroundColor="@color/chip_background_color"
+                app:chipSurfaceColor="@android:color/transparent"
+                android:textColor="@color/chip_text_color"
+                app:checkedIconEnabled="false" />
+        </com.google.android.material.chip.ChipGroup>
 
         <!-- CHART AREA (hook this to your ChartsView API) -->
 
@@ -313,7 +326,7 @@
                         android:id="@+id/indicatorsExpandIcon"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
-                        android:src="@android:drawable/arrow_down_float" />
+                        android:src="@android:drawable/arrow_up_float" />
                 </LinearLayout>
 
                 <!-- Grid of indicator buttons -->

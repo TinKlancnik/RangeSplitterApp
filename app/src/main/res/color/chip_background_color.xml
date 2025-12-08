@@ -2,14 +2,14 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Selected -->
-    <item android:state_checked="true" android:color="@color/colorActive"/>  <!-- semi-transparent purple -->
+    <item android:state_checked="true" android:color="#0D1519"/>
 
     <!-- Pressed -->
-    <item android:state_pressed="true" android:color="@color/buttonDefault"/>
+    <item android:state_pressed="true" android:color="#133D3F"/>
 
     <!-- Hovered (API ≥ 26) -->
-    <item android:state_hovered="true" android:color="@color/buttonHover"/>
+    <item android:state_hovered="true" android:color="#3E4144"/>
 
     <!-- Default -->
-    <item android:color="@color/colorInactive"/>
+    <item android:color="@android:color/transparent"/>
 </selector>

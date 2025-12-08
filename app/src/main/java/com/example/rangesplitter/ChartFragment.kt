@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.example.rangesplitter.TradeUtils.fetchKlines
 import com.example.rangesplitter.indicators.Macro
+import com.google.android.material.chip.ChipGroup
 import com.tradingview.lightweightcharts.api.chart.models.color.surface.SurfaceColor
 import com.tradingview.lightweightcharts.api.chart.models.color.toIntColor
 import com.tradingview.lightweightcharts.api.interfaces.SeriesApi
@@ -26,6 +27,8 @@ import com.tradingview.lightweightcharts.runtime.plugins.PriceFormatter
 import com.tradingview.lightweightcharts.runtime.plugins.TimeFormatter
 import com.tradingview.lightweightcharts.view.ChartsView
 import com.tradingview.lightweightcharts.api.chart.models.color.surface.SolidColor
+import com.tradingview.lightweightcharts.api.options.models.GridLineOptions
+import com.tradingview.lightweightcharts.api.options.models.GridOptions
 
 class ChartFragment : Fragment(R.layout.fragment_chart) {
 
@@ -42,7 +45,17 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
     private var indicatorToggleBtn: ImageButton? = null
 
     private var currentSymbol: String = "BTCUSDT"
-    private var currentInterval: String = "60"   // 1H by default
+    private var currentInterval: String = "60"
+
+    // put near currentInterval
+    private val timeFrameMap = mapOf(
+        R.id.btn1m  to "1",
+        R.id.btn5m  to "5",
+        R.id.btn15m to "15",
+        R.id.btn1h  to "60",
+        R.id.btn4h  to "240",
+        R.id.btnD  to "D",
+    )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -58,12 +71,22 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
 
         val chartView = view.findViewById<ChartsView>(R.id.charts_view)
 
-        // ---------- CHART SETUP ----------
         setupChart(chartView)
 
-        // Load default symbol once series are created
-        // (series are created inside setupChart -> add*Series chain)
-        // we call loadChart() at the end of that chain
+        val timeframeGroup = view.findViewById<ChipGroup>(R.id.timeframeGroup)
+
+        timeframeGroup.check(R.id.btn1h)
+        currentInterval = "60"   // keep in sync with default
+
+        timeframeGroup.setOnCheckedChangeListener { group, checkedId ->
+            if (checkedId == View.NO_ID) return@setOnCheckedChangeListener
+
+            val newInterval = timeFrameMap[checkedId] ?: return@setOnCheckedChangeListener
+            if (newInterval == currentInterval) return@setOnCheckedChangeListener
+
+            currentInterval = newInterval
+            loadChartData()
+        }
 
         // ---------- COIN SELECT BOTTOM SHEET ----------
         pairName.setOnClickListener {
@@ -117,8 +140,8 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
     private fun setupChart(chartView: ChartsView) {
 
         val layoutOptions = LayoutOptions().apply {
-            background = SolidColor(Color.parseColor("#0D0D0D"))
-            textColor = Color.WHITE.toIntColor()
+            background = SolidColor(Color.TRANSPARENT)   // transparent bg
+            textColor = Color.parseColor("#EAEDED").toIntColor()
         }
         val localizationOptions = LocalizationOptions().apply {
             locale = "en-US"
@@ -131,12 +154,10 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                 layout = layoutOptions
                 localization = localizationOptions
 
-                // PRICE SCALE (remove white border)
                 priceScale = com.tradingview.lightweightcharts.api.options.models.PriceScaleOptions().apply {
                     borderColor = Color.TRANSPARENT.toIntColor()
                 }
 
-                // TIME SCALE (remove white border)
                 timeScale = TimeScaleOptions().apply {
                     borderColor = Color.TRANSPARENT.toIntColor()
                     rightBarStaysOnScroll = true
@@ -144,9 +165,27 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
 
                 handleScroll = HandleScrollOptions(true)
                 handleScale = HandleScaleOptions(true, true)
+
+                grid = GridOptions().apply {
+                    vertLines = GridLineOptions().apply {
+                        color = Color.parseColor("#4D00C9A7").toIntColor()
+                    }
+                    horzLines = GridLineOptions().apply {
+                        color = Color.parseColor("#4D00C9A7").toIntColor()
+                    }
+                }
+
             }
         )
+
+        // 👉 You need this part:
+        chartView.api.addCandlestickSeries { series ->
+            candlestickSeries = series
+            // load default data once the series is ready
+            loadChartData()
+        }
     }
+
 
 
 
