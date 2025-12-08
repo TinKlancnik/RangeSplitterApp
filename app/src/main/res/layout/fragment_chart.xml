@@ -329,13 +329,231 @@
                         android:src="@android:drawable/arrow_up_float" />
                 </LinearLayout>
 
-                <!-- Grid of indicator buttons -->
+                <!-- 3 x 2 grid of tiles -->
                 <GridLayout
                     android:id="@+id/indicatorsGrid"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:columnCount="3">
+
+                    <!-- MA -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btnMacro"
+                        android:layout_width="0dp"
+                        android:layout_height="70dp"
+                        android:layout_margin="6dp"
+                        android:layout_columnWeight="1"
+                        app:cardCornerRadius="12dp"
+                        app:cardBackgroundColor="#11151F"
+                        app:strokeColor="#1F2937"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/macroTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Macro"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFF"
+                                android:textSize="13sp"/>
+
+                            <TextView
+                                android:id="@+id/macroSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Macro Indicator"
+                                android:textColor="#9AA0B5"
+                                android:textSize="10sp"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btnEMA"
+                        android:layout_width="0dp"
+                        android:layout_height="70dp"
+                        android:layout_margin="6dp"
+                        android:layout_columnWeight="1"
+                        app:cardCornerRadius="12dp"
+                        app:cardBackgroundColor="#11151F"
+                        app:strokeColor="#1F2937"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/emaTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="EMA"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFF"
+                                android:textSize="13sp"/>
+
+                            <TextView
+                                android:id="@+id/emaSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="EMA 12"
+                                android:textColor="#9AA0B5"
+                                android:textSize="10sp"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btnMA"
+                        android:layout_width="0dp"
+                        android:layout_height="70dp"
+                        android:layout_margin="6dp"
+                        android:layout_columnWeight="1"
+                        app:cardCornerRadius="12dp"
+                        app:cardBackgroundColor="#11151F"
+                        app:strokeColor="#1F2937"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/maTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="MA"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFF"
+                                android:textSize="13sp"/>
+
+                            <TextView
+                                android:id="@+id/maSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="SMA 20"
+                                android:textColor="#9AA0B5"
+                                android:textSize="10sp"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btnBB"
+                        android:layout_width="0dp"
+                        android:layout_height="70dp"
+                        android:layout_margin="6dp"
+                        android:layout_columnWeight="1"
+                        app:cardCornerRadius="12dp"
+                        app:cardBackgroundColor="#11151F"
+                        app:strokeColor="#1F2937"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/bbTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="BB"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFF"
+                                android:textSize="13sp"/>
+
+                            <TextView
+                                android:id="@+id/bbSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="SMA 20"
+                                android:textColor="#9AA0B5"
+                                android:textSize="10sp"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btnDON"
+                        android:layout_width="0dp"
+                        android:layout_height="70dp"
+                        android:layout_margin="6dp"
+                        android:layout_columnWeight="1"
+                        app:cardCornerRadius="12dp"
+                        app:cardBackgroundColor="#11151F"
+                        app:strokeColor="#1F2937"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/donTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="DON"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFF"
+                                android:textSize="13sp"/>
+
+                            <TextView
+                                android:id="@+id/donSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Donchian"
+                                android:textColor="#9AA0B5"
+                                android:textSize="10sp"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btnSUP"
+                        android:layout_width="0dp"
+                        android:layout_height="70dp"
+                        android:layout_margin="6dp"
+                        android:layout_columnWeight="1"
+                        app:cardCornerRadius="12dp"
+                        app:cardBackgroundColor="#11151F"
+                        app:strokeColor="#1F2937"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/supTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="SUP"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFF"
+                                android:textSize="13sp"/>
+
+                            <TextView
+                                android:id="@+id/supSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Supertrend"
+                                android:textColor="#9AA0B5"
+                                android:textSize="10sp"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
                 </GridLayout>
             </LinearLayout>

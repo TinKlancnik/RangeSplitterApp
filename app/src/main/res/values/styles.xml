@@ -29,6 +29,7 @@
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">48dp</item>
         <item name="android:layout_marginHorizontal">24dp</item>
+        <item name="android:textSize">11sp</item>
         <item name="android:textColor">@color/textPrimary</item>
         <item name="android:backgroundTint">@color/cardInputBG</item>
         <item name="android:paddingHorizontal">16dp</item>
@@ -47,6 +48,16 @@
         <item name="boxStrokeColor">@color/primaryAccent</item>
         <item name="hintTextColor">@color/textMuted</item>
         <item name="boxBackgroundColor">@color/cardInputBG</item>
+    </style>
+
+    <style name="IndicatorButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">80dp</item>
+        <item name="android:layout_margin">6dp</item>
+        <item name="android:gravity">center</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:backgroundTint">#1C1F26</item>
+        <item name="android:textColor">@color/textPrimary</item>
     </style>
 
 </resources>
