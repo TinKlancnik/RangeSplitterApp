@@ -540,7 +540,7 @@
                                 android:id="@+id/supTitle"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="SUP"
+                                android:text="HL"
                                 android:textStyle="bold"
                                 android:textColor="#FFFFFF"
                                 android:textSize="13sp"/>
@@ -549,7 +549,7 @@
                                 android:id="@+id/supSub"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Supertrend"
+                                android:text="High/Low"
                                 android:textColor="#9AA0B5"
                                 android:textSize="10sp"/>
                         </LinearLayout>

@@ -8,6 +8,11 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.example.rangesplitter.TradeUtils.fetchKlines
 import com.example.rangesplitter.indicators.Macro
+import com.example.rangesplitter.indicators.EMA
+import com.example.rangesplitter.indicators.MA
+import com.example.rangesplitter.indicators.BB
+import com.example.rangesplitter.indicators.DON
+import com.example.rangesplitter.indicators.RecentHL   // ⬅ use RecentHL instead of SUP
 import com.google.android.material.chip.ChipGroup
 import com.tradingview.lightweightcharts.api.chart.models.color.surface.SolidColor
 import com.tradingview.lightweightcharts.api.chart.models.color.toIntColor
@@ -22,7 +27,6 @@ import com.tradingview.lightweightcharts.api.options.models.LocalizationOptions
 import com.tradingview.lightweightcharts.api.options.models.PriceScaleOptions
 import com.tradingview.lightweightcharts.api.options.models.TimeScaleOptions
 import com.tradingview.lightweightcharts.api.series.models.CandlestickData
-import com.tradingview.lightweightcharts.api.series.models.LineData
 import com.tradingview.lightweightcharts.api.series.models.Time
 import com.tradingview.lightweightcharts.runtime.plugins.DateTimeFormat
 import com.tradingview.lightweightcharts.runtime.plugins.PriceFormatter
@@ -33,17 +37,46 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
 
     // --- Chart / series refs ---
     private var candlestickSeries: SeriesApi? = null
+
+    // Macro EMAs
     private var fastEmaSeries: SeriesApi? = null
     private var slowEmaSeries: SeriesApi? = null
     private var biasEmaSeries: SeriesApi? = null
-    private var ema12Series: SeriesApi? = null   // simple EMA12 overlay
+
+    // EMA 12
+    private var ema12Series: SeriesApi? = null
+
+    // MA (e.g. SMA 20)
+    private var maSeries: SeriesApi? = null
+
+    // Bollinger Bands
+    private var bbUpperSeries: SeriesApi? = null
+    private var bbMiddleSeries: SeriesApi? = null
+    private var bbLowerSeries: SeriesApi? = null
+
+    // Donchian Channels
+    private var donUpperSeries: SeriesApi? = null
+    private var donMiddleSeries: SeriesApi? = null
+    private var donLowerSeries: SeriesApi? = null
+
+    // Recent High / Low lines
+    private var recentHighSeries: SeriesApi? = null
+    private var recentLowSeries: SeriesApi? = null
 
     // --- Indicators ---
     private var macroIndicator: Macro? = null
+    private var ema12Indicator: EMA? = null
+    private var maIndicator: MA? = null
+    private var bbIndicator: BB? = null
+    private var donIndicator: DON? = null
+    private var recentHLIndicator: RecentHL? = null
+
     private var lastCandles: List<Candle> = emptyList()
 
-    private enum class ActiveIndicator { MACRO, EMA }
-    private var activeIndicator: ActiveIndicator = ActiveIndicator.MACRO
+    private enum class ActiveIndicator { NONE, MACRO, EMA, MA, BB, DON, RECENT_HL }
+
+    // ⬅ default: NONE → no indicator on load
+    private var activeIndicator: ActiveIndicator = ActiveIndicator.NONE
 
     private var currentSymbol: String = "BTCUSDT"
     private var currentInterval: String = "60"
@@ -72,6 +105,12 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         // indicator tiles (cards)
         val macroTile: View = view.findViewById(R.id.btnMacro)
         val emaTile: View = view.findViewById(R.id.btnEMA)
+
+        // optional extra tiles
+        val maTile: View? = view.findViewById(R.id.btnMA)
+        val bbTile: View? = view.findViewById(R.id.btnBB)
+        val donTile: View? = view.findViewById(R.id.btnDON)
+        val recentHlTile: View? = view.findViewById(R.id.btnSUP) // reuse SUP button for Recent HL
 
         val chartView = view.findViewById<ChartsView>(R.id.charts_view)
         setupChart(chartView)
@@ -103,45 +142,60 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
             updateIndicators()
         }
 
+        maTile?.setOnClickListener {
+            activeIndicator = ActiveIndicator.MA
+            Log.d("ChartFragment", "MA tile clicked")
+            updateIndicators()
+        }
+
+        bbTile?.setOnClickListener {
+            activeIndicator = ActiveIndicator.BB
+            Log.d("ChartFragment", "BB tile clicked")
+            updateIndicators()
+        }
+
+        donTile?.setOnClickListener {
+            activeIndicator = ActiveIndicator.DON
+            Log.d("ChartFragment", "DON tile clicked")
+            updateIndicators()
+        }
+
+        // Recent High/Low button
+        recentHlTile?.setOnClickListener {
+            activeIndicator = ActiveIndicator.RECENT_HL
+            Log.d("ChartFragment", "RecentHL tile clicked")
+            updateIndicators()
+        }
+
         // ---------- COIN SELECT BOTTOM SHEET ----------
         pairName.setOnClickListener {
             CoinSelectBottomSheet { coin ->
 
-                // 1. Update pair
                 pairName.text = coin.symbol
 
-                // 2. Base asset (BTC from BTCUSDT)
                 val base = coin.symbol.takeWhile { it.isLetter() }
                 assetSubtitle.text = base
 
-                // 3. Update price
                 currentPrice.text = coin.priceText
 
-                // 4. Update % change + color
                 priceChange.text = coin.changeText
                 val ctx = requireContext()
                 val color =
                     if (coin.changeValue >= 0) R.color.vibrant_green else R.color.vibrant_red
                 priceChange.setTextColor(ctx.getColor(color))
 
-                // 5. 24H HIGH
                 highValue.text = String.format("$%,.2f", coin.high24h)
-
-                // 6. 24H LOW
                 lowValue.text = String.format("$%,.2f", coin.low24h)
 
-                // 7. VOLUME (use turnover24h)
                 val volumeFormatted = TradeUtils.formatCompactNumber(coin.turnover24h)
                 volumeValue.text = volumeFormatted
 
-                // 8. Funding rate instead of market cap
                 mcapValue.text = String.format("%.4f%%", coin.fundingRate * 100)
                 val ctxF = requireContext()
                 val colorF =
                     if (coin.fundingRate >= 0) R.color.vibrant_green else R.color.vibrant_red
                 mcapValue.setTextColor(ctxF.getColor(colorF))
 
-                // 9. Update chart to selected symbol
                 currentSymbol = coin.symbol
                 loadChartData()
             }.show(parentFragmentManager, "coinSheet")
@@ -194,33 +248,95 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         chartView.api.addCandlestickSeries { candleSeries ->
             candlestickSeries = candleSeries
 
+            // NEST all EMA series + indicators so they exist before we use them
             chartView.api.addLineSeries { fast ->
                 fastEmaSeries = fast
-            }
-            chartView.api.addLineSeries { slow ->
-                slowEmaSeries = slow
-            }
-            chartView.api.addLineSeries { bias ->
-                biasEmaSeries = bias
-            }
-            chartView.api.addLineSeries { emaLine ->
-                ema12Series = emaLine
-            }
 
-            // create Macro indicator
-            if (fastEmaSeries != null && slowEmaSeries != null && biasEmaSeries != null) {
-                macroIndicator = Macro(
-                    candlestickSeries = candleSeries,
-                    fastEmaSeries = fastEmaSeries!!,
-                    slowEmaSeries = slowEmaSeries!!,
-                    biasEmaSeries = biasEmaSeries!!
-                )
-            } else {
-                Log.e("ChartFragment", "Macro indicator not created: EMA series null")
-            }
+                chartView.api.addLineSeries { slow ->
+                    slowEmaSeries = slow
 
-            // initial load
-            loadChartData()
+                    chartView.api.addLineSeries { bias ->
+                        biasEmaSeries = bias
+
+                        // EMA 12
+                        chartView.api.addLineSeries { emaLine ->
+                            ema12Series = emaLine
+                            ema12Indicator = EMA(emaLine, 12)
+                        }
+
+                        // Macro indicator – we now have candleSeries, fast, slow, bias
+                        macroIndicator = Macro(
+                            candlestickSeries = candleSeries,
+                            fastEmaSeries = fast,
+                            slowEmaSeries = slow,
+                            biasEmaSeries = bias,
+                            useStochRsiFilter = false
+                        )
+
+                        // MA (e.g. SMA 20)
+                        chartView.api.addLineSeries { maLine ->
+                            maSeries = maLine
+                            maIndicator = MA(
+                                maSeries = maLine,
+                                period = 20,
+                                type = MA.Type.SMA
+                            )
+                        }
+
+                        // Bollinger Bands
+                        chartView.api.addLineSeries { upper ->
+                            bbUpperSeries = upper
+                            chartView.api.addLineSeries { middle ->
+                                bbMiddleSeries = middle
+                                chartView.api.addLineSeries { lower ->
+                                    bbLowerSeries = lower
+                                    bbIndicator = BB(
+                                        upperSeries = upper,
+                                        middleSeries = middle,
+                                        lowerSeries = lower,
+                                        period = 20,
+                                        multiplier = 2.0
+                                    )
+                                }
+                            }
+                        }
+
+                        // Donchian Channels
+                        chartView.api.addLineSeries { upper ->
+                            donUpperSeries = upper
+                            chartView.api.addLineSeries { middle ->
+                                donMiddleSeries = middle
+                                chartView.api.addLineSeries { lower ->
+                                    donLowerSeries = lower
+                                    donIndicator = DON(
+                                        upperSeries = upper,
+                                        middleSeries = middle,
+                                        lowerSeries = lower,
+                                        period = 20
+                                    )
+                                }
+                            }
+                        }
+
+                        // Recent High / Low lines
+                        chartView.api.addLineSeries { highSeries ->
+                            recentHighSeries = highSeries
+                            chartView.api.addLineSeries { lowSeries ->
+                                recentLowSeries = lowSeries
+
+                                recentHLIndicator = RecentHL(
+                                    highLineSeries = highSeries,
+                                    lowLineSeries = lowSeries,
+                                    lookback = 20
+                                )
+                            }
+                        }
+
+                        // initial load AFTER everything is wired
+                        loadChartData()
+                    }
+                }
+            }
         }
     }
 
@@ -250,6 +366,7 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                     lastCandles = sorted
                     candlestickSeries?.setData(data)
                     Log.d("ChartFragment", "Loaded ${lastCandles.size} candles")
+                    // ⬅ Do NOT force an indicator: activeIndicator may be NONE
                     updateIndicators()
                 }
             },
@@ -267,60 +384,62 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
             return
         }
 
+        clearAllIndicators()
+
         when (activeIndicator) {
+            ActiveIndicator.NONE -> {
+                // show only candles; nothing to render
+                Log.d("ChartFragment", "No indicator active")
+            }
             ActiveIndicator.MACRO -> {
                 Log.d("ChartFragment", "Applying MACRO indicator")
-
-                // clear EMA-only series
-                ema12Series?.setData(emptyList())
-
-                // let Macro draw its EMAs + markers
-                macroIndicator?.render(lastCandles, showBothEmas = true)
+                macroIndicator?.render(lastCandles, true)
             }
-
             ActiveIndicator.EMA -> {
                 Log.d("ChartFragment", "Applying EMA 12 indicator")
-
-                // clear Macro EMAs + markers
-                fastEmaSeries?.setData(emptyList())
-                slowEmaSeries?.setData(emptyList())
-                biasEmaSeries?.setData(emptyList())
-                candlestickSeries?.setMarkers(emptyList())
-
-                // draw simple EMA 12 directly here
-                renderEma12()
+                ema12Indicator?.render(lastCandles)
+            }
+            ActiveIndicator.MA -> {
+                Log.d("ChartFragment", "Applying MA indicator")
+                maIndicator?.render(lastCandles)
+            }
+            ActiveIndicator.BB -> {
+                Log.d("ChartFragment", "Applying Bollinger Bands indicator")
+                bbIndicator?.render(lastCandles)
+            }
+            ActiveIndicator.DON -> {
+                Log.d("ChartFragment", "Applying Donchian Channels indicator")
+                donIndicator?.render(lastCandles)
+            }
+            ActiveIndicator.RECENT_HL -> {
+                Log.d("ChartFragment", "Applying Recent High/Low indicator")
+                recentHLIndicator?.render(lastCandles)
             }
         }
     }
 
-    // ----------------- EMA 12 calculation -----------------
+    /**
+     * Clears all overlay indicators (lines + markers) from chart.
+     * Candles remain.
+     */
+    private fun clearAllIndicators() {
+        // Macro EMAs + markers
+        fastEmaSeries?.setData(emptyList())
+        slowEmaSeries?.setData(emptyList())
+        biasEmaSeries?.setData(emptyList())
+        candlestickSeries?.setMarkers(emptyList())
 
-    private fun renderEma12(period: Int = 12) {
-        val series = ema12Series ?: return
-        if (lastCandles.isEmpty()) return
+        // EMA 12
+        ema12Series?.setData(emptyList())
 
-        val closes = lastCandles.map { it.close.toDouble() }
-        val emaValues = calculateEma(closes, period)
+        // MA
+        maSeries?.setData(emptyList())
 
-        val data = lastCandles.indices.map { i ->
-            LineData(
-                time = Time.Utc(lastCandles[i].time),
-                value = emaValues[i].toFloat()
-            )
-        }
+        // Bands / channels
+        bbIndicator?.clear()
+        donIndicator?.clear()
 
-        series.setData(data)
-    }
-
-    private fun calculateEma(prices: List<Double>, period: Int): List<Double> {
-        if (prices.isEmpty()) return emptyList()
-        val ema = MutableList(prices.size) { 0.0 }
-        val k = 2.0 / (period + 1)
-
-        ema[0] = prices[0]
-        for (i in 1 until prices.size) {
-            ema[i] = prices[i] * k + ema[i - 1] * (1 - k)
-        }
-        return ema
+        // Recent HL
+        recentHLIndicator?.clear()
     }
 }
