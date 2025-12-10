@@ -301,6 +301,7 @@
             app:layout_constraintBottom_toBottomOf="parent">
 
             <LinearLayout
+                android:id="@+id/indicatorPanel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"

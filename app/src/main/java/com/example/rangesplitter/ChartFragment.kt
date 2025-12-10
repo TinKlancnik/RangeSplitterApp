@@ -4,15 +4,16 @@ import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.example.rangesplitter.TradeUtils.fetchKlines
-import com.example.rangesplitter.indicators.Macro
-import com.example.rangesplitter.indicators.EMA
-import com.example.rangesplitter.indicators.MA
 import com.example.rangesplitter.indicators.BB
 import com.example.rangesplitter.indicators.DON
-import com.example.rangesplitter.indicators.RecentHL   // ⬅ use RecentHL instead of SUP
+import com.example.rangesplitter.indicators.EMA
+import com.example.rangesplitter.indicators.MA
+import com.example.rangesplitter.indicators.Macro
+import com.example.rangesplitter.indicators.RecentHL
 import com.google.android.material.chip.ChipGroup
 import com.tradingview.lightweightcharts.api.chart.models.color.surface.SolidColor
 import com.tradingview.lightweightcharts.api.chart.models.color.toIntColor
@@ -32,6 +33,7 @@ import com.tradingview.lightweightcharts.runtime.plugins.DateTimeFormat
 import com.tradingview.lightweightcharts.runtime.plugins.PriceFormatter
 import com.tradingview.lightweightcharts.runtime.plugins.TimeFormatter
 import com.tradingview.lightweightcharts.view.ChartsView
+import com.tradingview.lightweightcharts.api.options.models.applyLineSeriesOptions
 
 class ChartFragment : Fragment(R.layout.fragment_chart) {
 
@@ -75,11 +77,13 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
 
     private enum class ActiveIndicator { NONE, MACRO, EMA, MA, BB, DON, RECENT_HL }
 
-    // ⬅ default: NONE → no indicator on load
+    // default: NONE → no indicator on load
     private var activeIndicator: ActiveIndicator = ActiveIndicator.NONE
 
     private var currentSymbol: String = "BTCUSDT"
     private var currentInterval: String = "60"
+
+    private var isIndicatorPanelOpen: Boolean = false
 
     private val timeFrameMap = mapOf(
         R.id.btn1m  to "1",
@@ -94,23 +98,40 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         super.onViewCreated(view, savedInstanceState)
 
         val pairName: TextView = view.findViewById(R.id.pairName)
-        val assetSubtitle = view.findViewById<TextView>(R.id.assetSubtitle)
-        val currentPrice = view.findViewById<TextView>(R.id.currentPrice)
-        val priceChange = view.findViewById<TextView>(R.id.priceChange)
-        val highValue = view.findViewById<TextView>(R.id.highValue)
-        val lowValue = view.findViewById<TextView>(R.id.lowValue)
-        val volumeValue = view.findViewById<TextView>(R.id.volumeValue)
-        val mcapValue = view.findViewById<TextView>(R.id.mcapValue)
+        val assetSubtitle: TextView = view.findViewById(R.id.assetSubtitle)
+        val currentPrice: TextView = view.findViewById(R.id.currentPrice)
+        val priceChange: TextView = view.findViewById(R.id.priceChange)
+        val highValue: TextView = view.findViewById(R.id.highValue)
+        val lowValue: TextView = view.findViewById(R.id.lowValue)
+        val volumeValue: TextView = view.findViewById(R.id.volumeValue)
+        val mcapValue: TextView = view.findViewById(R.id.mcapValue)
 
         // indicator tiles (cards)
         val macroTile: View = view.findViewById(R.id.btnMacro)
         val emaTile: View = view.findViewById(R.id.btnEMA)
-
-        // optional extra tiles
         val maTile: View? = view.findViewById(R.id.btnMA)
         val bbTile: View? = view.findViewById(R.id.btnBB)
         val donTile: View? = view.findViewById(R.id.btnDON)
-        val recentHlTile: View? = view.findViewById(R.id.btnSUP) // reuse SUP button for Recent HL
+        val recentHlTile: View? = view.findViewById(R.id.btnSUP) // HL
+
+        // indicator grid + expand icon
+        val indicatorsGrid: View = view.findViewById(R.id.indicatorsGrid)
+        val expandIcon: ImageView = view.findViewById(R.id.indicatorsExpandIcon)
+
+        // start with grid hidden, header still visible
+        indicatorsGrid.visibility = View.GONE
+        isIndicatorPanelOpen = false
+        expandIcon.setImageResource(android.R.drawable.arrow_up_float)
+
+        expandIcon.setOnClickListener {
+            isIndicatorPanelOpen = !isIndicatorPanelOpen
+            indicatorsGrid.visibility =
+                if (isIndicatorPanelOpen) View.VISIBLE else View.GONE
+            expandIcon.setImageResource(
+                if (isIndicatorPanelOpen) android.R.drawable.arrow_down_float
+                else android.R.drawable.arrow_down_float
+            )
+        }
 
         val chartView = view.findViewById<ChartsView>(R.id.charts_view)
         setupChart(chartView)
@@ -129,42 +150,35 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
             loadChartData()
         }
 
-        // indicator tile clicks
+        // indicator tile clicks (toggle on/off)
         macroTile.setOnClickListener {
-            activeIndicator = ActiveIndicator.MACRO
             Log.d("ChartFragment", "Macro tile clicked")
-            updateIndicators()
+            toggleIndicator(ActiveIndicator.MACRO)
         }
 
         emaTile.setOnClickListener {
-            activeIndicator = ActiveIndicator.EMA
             Log.d("ChartFragment", "EMA tile clicked")
-            updateIndicators()
+            toggleIndicator(ActiveIndicator.EMA)
         }
 
         maTile?.setOnClickListener {
-            activeIndicator = ActiveIndicator.MA
             Log.d("ChartFragment", "MA tile clicked")
-            updateIndicators()
+            toggleIndicator(ActiveIndicator.MA)
         }
 
         bbTile?.setOnClickListener {
-            activeIndicator = ActiveIndicator.BB
             Log.d("ChartFragment", "BB tile clicked")
-            updateIndicators()
+            toggleIndicator(ActiveIndicator.BB)
         }
 
         donTile?.setOnClickListener {
-            activeIndicator = ActiveIndicator.DON
             Log.d("ChartFragment", "DON tile clicked")
-            updateIndicators()
+            toggleIndicator(ActiveIndicator.DON)
         }
 
-        // Recent High/Low button
         recentHlTile?.setOnClickListener {
-            activeIndicator = ActiveIndicator.RECENT_HL
             Log.d("ChartFragment", "RecentHL tile clicked")
-            updateIndicators()
+            toggleIndicator(ActiveIndicator.RECENT_HL)
         }
 
         // ---------- COIN SELECT BOTTOM SHEET ----------
@@ -200,6 +214,16 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                 loadChartData()
             }.show(parentFragmentManager, "coinSheet")
         }
+    }
+
+    // toggle helper: click same indicator again → turn off
+    private fun toggleIndicator(type: ActiveIndicator) {
+        activeIndicator = if (activeIndicator == type) {
+            ActiveIndicator.NONE
+        } else {
+            type
+        }
+        updateIndicators()
     }
 
     // ----------------- Chart setup -----------------
@@ -262,6 +286,10 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                         chartView.api.addLineSeries { emaLine ->
                             ema12Series = emaLine
                             ema12Indicator = EMA(emaLine, 12)
+
+                            emaLine.applyLineSeriesOptions {
+                                color = Color.parseColor("#FF8C00").toIntColor()   // orange
+                            }
                         }
 
                         // Macro indicator – we now have candleSeries, fast, slow, bias
@@ -276,6 +304,10 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                         // MA (e.g. SMA 20)
                         chartView.api.addLineSeries { maLine ->
                             maSeries = maLine
+                            maLine.applyLineSeriesOptions {
+                                color = Color.parseColor("#F4D13D").toIntColor()   // TV yellow
+                            }
+
                             maIndicator = MA(
                                 maSeries = maLine,
                                 period = 20,
@@ -286,10 +318,22 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                         // Bollinger Bands
                         chartView.api.addLineSeries { upper ->
                             bbUpperSeries = upper
+                            upper.applyLineSeriesOptions {
+                                color = Color.parseColor("#FF4B4B").toIntColor()
+                            }
+
                             chartView.api.addLineSeries { middle ->
                                 bbMiddleSeries = middle
+                                middle.applyLineSeriesOptions {
+                                    color = Color.parseColor("#CCCCCC").toIntColor() // gray
+                                }
+
                                 chartView.api.addLineSeries { lower ->
                                     bbLowerSeries = lower
+                                    lower.applyLineSeriesOptions {
+                                        color = Color.parseColor("#44FF44").toIntColor() // green
+                                    }
+
                                     bbIndicator = BB(
                                         upperSeries = upper,
                                         middleSeries = middle,
@@ -321,8 +365,17 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                         // Recent High / Low lines
                         chartView.api.addLineSeries { highSeries ->
                             recentHighSeries = highSeries
+
+                            highSeries.applyLineSeriesOptions {
+                                color = Color.parseColor("#FFFFFF").toIntColor()  // white
+                            }
+
                             chartView.api.addLineSeries { lowSeries ->
                                 recentLowSeries = lowSeries
+
+                                lowSeries.applyLineSeriesOptions {
+                                    color = Color.parseColor("#FFFFFF").toIntColor() // white
+                                }
 
                                 recentHLIndicator = RecentHL(
                                     highLineSeries = highSeries,
@@ -366,7 +419,6 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                     lastCandles = sorted
                     candlestickSeries?.setData(data)
                     Log.d("ChartFragment", "Loaded ${lastCandles.size} candles")
-                    // ⬅ Do NOT force an indicator: activeIndicator may be NONE
                     updateIndicators()
                 }
             },
@@ -388,7 +440,6 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
 
         when (activeIndicator) {
             ActiveIndicator.NONE -> {
-                // show only candles; nothing to render
                 Log.d("ChartFragment", "No indicator active")
             }
             ActiveIndicator.MACRO -> {
