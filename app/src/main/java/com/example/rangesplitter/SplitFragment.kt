@@ -214,7 +214,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
 
         if (slPercentage > 5) {
             val multiplier = (50 / slPercentage).toInt()
-            val bybitClient = getByBitClient()
+            val bybitClient = BybitClientManager.client
             val leverageParams = LeverageParams(
                 category = Category.linear,
                 symbol = symbol,
@@ -268,14 +268,8 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
-    private fun getByBitClient(): ByBitRestClient {
-        val apiKey = "UV6R9A3gNuk9vl0vVQ"
-        val apiSecret = "vRdpemzToMITR53ftZSM3ar7kSdx6NeodJTn"
-        return ByBitRestClient(apiKey, apiSecret, true, httpClientProvider = okHttpClientProvider)
-    }
-
     private fun placeATrade(price: String, amount: String, side: Side) {
-        val bybitClient = getByBitClient()
+        val bybitClient = BybitClientManager.client
 
         val tradeParams = PlaceOrderParams(
             category = Category.linear,

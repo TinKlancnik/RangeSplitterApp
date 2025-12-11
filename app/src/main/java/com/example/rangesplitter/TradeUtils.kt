@@ -43,8 +43,6 @@ enum class SortMode {
     VOLUME, CHANGE, VOLATILITY, ALPHA
 }
 
-// ---------- other models you already had ----------
-
 data class OpenOrder(
     val symbol: String,
     val triggerPrice: String,
@@ -74,14 +72,14 @@ data class Candle(
 
 object TradeUtils {
 
-    // reuse single client + main-thread handler
+    // reuse single client + main-thread handler (for REST tickers)
     private val httpClient = OkHttpClient()
     private val mainHandler = Handler(Looper.getMainLooper())
 
     fun fetchOpenOrders(
         recyclerView: RecyclerView
     ) {
-        val client = BybitClientManager.createClient()
+        val client = BybitClientManager.client
         val params = OrdersOpenParams(category = Category.linear, settleCoin = "USDT")
 
         client.orderClient.ordersOpen(params, object : ByBitRestApiCallback<OrdersOpenResponse> {
@@ -123,7 +121,7 @@ object TradeUtils {
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
-        val client = BybitClientManager.createClient()
+        val client = BybitClientManager.client
         val params = CancelOrderParams(
             category = Category.linear,
             symbol = order.symbol,
@@ -145,7 +143,7 @@ object TradeUtils {
     }
 
     fun fetchOpenPositions(recyclerView: RecyclerView) {
-        val client = BybitClientManager.createClient()
+        val client = BybitClientManager.client
         val params = PositionInfoParams(category = Category.linear, settleCoin = "USDT")
 
         client.positionClient.getPositionInfo(params, object : ByBitRestApiCallback<PositionInfoResponse> {
@@ -199,7 +197,7 @@ object TradeUtils {
         onSuccess: (List<Candle>) -> Unit,
         onError: (Throwable) -> Unit
     ) {
-        val client = BybitClientManager.createClient()
+        val client = BybitClientManager.client
         val params = KLineParams(
             category = Category.linear,
             symbol = symbol,
@@ -229,7 +227,7 @@ object TradeUtils {
     }
 
     fun fetchBalance(onResult: (String) -> Unit) {
-        val client = BybitClientManager.createClient()
+        val client = BybitClientManager.client
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -308,7 +306,7 @@ object TradeUtils {
                         val high = highStr.toDoubleOrNull() ?: 0.0
                         val low = lowStr.toDoubleOrNull() ?: 0.0
                         val volatility = high - low
-                        val fundingRate =fundingRateStr.toDoubleOrNull()?:0.0
+                        val fundingRate = fundingRateStr.toDoubleOrNull() ?: 0.0
 
                         rawCoins.add(
                             RawCoin(
@@ -320,7 +318,7 @@ object TradeUtils {
                                 volatility = volatility,
                                 high = high,
                                 low = low,
-                                fundingRate=fundingRate
+                                fundingRate = fundingRate
                             )
                         )
                     }
@@ -374,6 +372,7 @@ object TradeUtils {
             }
         }.start()
     }
+
     fun formatCompactNumber(value: Double): String {
         val abs = kotlin.math.abs(value)
 
@@ -384,5 +383,4 @@ object TradeUtils {
             else                 -> String.format("%.2f", value)
         }
     }
-
 }
