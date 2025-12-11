@@ -27,13 +27,13 @@ import com.tradingview.lightweightcharts.api.options.models.LayoutOptions
 import com.tradingview.lightweightcharts.api.options.models.LocalizationOptions
 import com.tradingview.lightweightcharts.api.options.models.PriceScaleOptions
 import com.tradingview.lightweightcharts.api.options.models.TimeScaleOptions
+import com.tradingview.lightweightcharts.api.options.models.applyLineSeriesOptions
 import com.tradingview.lightweightcharts.api.series.models.CandlestickData
 import com.tradingview.lightweightcharts.api.series.models.Time
 import com.tradingview.lightweightcharts.runtime.plugins.DateTimeFormat
 import com.tradingview.lightweightcharts.runtime.plugins.PriceFormatter
 import com.tradingview.lightweightcharts.runtime.plugins.TimeFormatter
 import com.tradingview.lightweightcharts.view.ChartsView
-import com.tradingview.lightweightcharts.api.options.models.applyLineSeriesOptions
 
 class ChartFragment : Fragment(R.layout.fragment_chart) {
 
@@ -73,11 +73,11 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
     private var donIndicator: DON? = null
     private var recentHLIndicator: RecentHL? = null
 
+    // Candle cache used by both REST and WebSocket
     private var lastCandles: List<Candle> = emptyList()
 
     private enum class ActiveIndicator { NONE, MACRO, EMA, MA, BB, DON, RECENT_HL }
 
-    // default: NONE → no indicator on load
     private var activeIndicator: ActiveIndicator = ActiveIndicator.NONE
 
     private var currentSymbol: String = "BTCUSDT"
@@ -93,6 +93,9 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         R.id.btn4h  to "240",
         R.id.btnD   to "D",
     )
+
+    // --- WebSocket helper (Streaming Implementation) ---
+    private val klineWebSocket = BybitKlineWebSocket()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -118,7 +121,6 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         val indicatorsGrid: View = view.findViewById(R.id.indicatorsGrid)
         val expandIcon: ImageView = view.findViewById(R.id.indicatorsExpandIcon)
 
-        // start with grid hidden, header still visible
         indicatorsGrid.visibility = View.GONE
         isIndicatorPanelOpen = false
         expandIcon.setImageResource(android.R.drawable.arrow_up_float)
@@ -151,35 +153,12 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         }
 
         // indicator tile clicks (toggle on/off)
-        macroTile.setOnClickListener {
-            Log.d("ChartFragment", "Macro tile clicked")
-            toggleIndicator(ActiveIndicator.MACRO)
-        }
-
-        emaTile.setOnClickListener {
-            Log.d("ChartFragment", "EMA tile clicked")
-            toggleIndicator(ActiveIndicator.EMA)
-        }
-
-        maTile?.setOnClickListener {
-            Log.d("ChartFragment", "MA tile clicked")
-            toggleIndicator(ActiveIndicator.MA)
-        }
-
-        bbTile?.setOnClickListener {
-            Log.d("ChartFragment", "BB tile clicked")
-            toggleIndicator(ActiveIndicator.BB)
-        }
-
-        donTile?.setOnClickListener {
-            Log.d("ChartFragment", "DON tile clicked")
-            toggleIndicator(ActiveIndicator.DON)
-        }
-
-        recentHlTile?.setOnClickListener {
-            Log.d("ChartFragment", "RecentHL tile clicked")
-            toggleIndicator(ActiveIndicator.RECENT_HL)
-        }
+        macroTile.setOnClickListener { toggleIndicator(ActiveIndicator.MACRO) }
+        emaTile.setOnClickListener { toggleIndicator(ActiveIndicator.EMA) }
+        maTile?.setOnClickListener { toggleIndicator(ActiveIndicator.MA) }
+        bbTile?.setOnClickListener { toggleIndicator(ActiveIndicator.BB) }
+        donTile?.setOnClickListener { toggleIndicator(ActiveIndicator.DON) }
+        recentHlTile?.setOnClickListener { toggleIndicator(ActiveIndicator.RECENT_HL) }
 
         // ---------- COIN SELECT BOTTOM SHEET ----------
         pairName.setOnClickListener {
@@ -216,13 +195,8 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         }
     }
 
-    // toggle helper: click same indicator again → turn off
     private fun toggleIndicator(type: ActiveIndicator) {
-        activeIndicator = if (activeIndicator == type) {
-            ActiveIndicator.NONE
-        } else {
-            type
-        }
+        activeIndicator = if (activeIndicator == type) ActiveIndicator.NONE else type
         updateIndicators()
     }
 
@@ -272,7 +246,6 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         chartView.api.addCandlestickSeries { candleSeries ->
             candlestickSeries = candleSeries
 
-            // NEST all EMA series + indicators so they exist before we use them
             chartView.api.addLineSeries { fast ->
                 fastEmaSeries = fast
 
@@ -288,11 +261,11 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                             ema12Indicator = EMA(emaLine, 12)
 
                             emaLine.applyLineSeriesOptions {
-                                color = Color.parseColor("#FF8C00").toIntColor()   // orange
+                                color = Color.parseColor("#FF8C00").toIntColor()
                             }
                         }
 
-                        // Macro indicator – we now have candleSeries, fast, slow, bias
+                        // Macro indicator
                         macroIndicator = Macro(
                             candlestickSeries = candleSeries,
                             fastEmaSeries = fast,
@@ -305,7 +278,7 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                         chartView.api.addLineSeries { maLine ->
                             maSeries = maLine
                             maLine.applyLineSeriesOptions {
-                                color = Color.parseColor("#F4D13D").toIntColor()   // TV yellow
+                                color = Color.parseColor("#F4D13D").toIntColor()
                             }
 
                             maIndicator = MA(
@@ -325,13 +298,13 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                             chartView.api.addLineSeries { middle ->
                                 bbMiddleSeries = middle
                                 middle.applyLineSeriesOptions {
-                                    color = Color.parseColor("#CCCCCC").toIntColor() // gray
+                                    color = Color.parseColor("#CCCCCC").toIntColor()
                                 }
 
                                 chartView.api.addLineSeries { lower ->
                                     bbLowerSeries = lower
                                     lower.applyLineSeriesOptions {
-                                        color = Color.parseColor("#44FF44").toIntColor() // green
+                                        color = Color.parseColor("#44FF44").toIntColor()
                                     }
 
                                     bbIndicator = BB(
@@ -367,14 +340,14 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                             recentHighSeries = highSeries
 
                             highSeries.applyLineSeriesOptions {
-                                color = Color.parseColor("#FFFFFF").toIntColor()  // white
+                                color = Color.parseColor("#FFFFFF").toIntColor()
                             }
 
                             chartView.api.addLineSeries { lowSeries ->
                                 recentLowSeries = lowSeries
 
                                 lowSeries.applyLineSeriesOptions {
-                                    color = Color.parseColor("#FFFFFF").toIntColor() // white
+                                    color = Color.parseColor("#FFFFFF").toIntColor()
                                 }
 
                                 recentHLIndicator = RecentHL(
@@ -393,7 +366,7 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         }
     }
 
-    // ----------------- Data loading -----------------
+    // ----------------- Data loading (history) -----------------
 
     private fun loadChartData() {
         val symbol = currentSymbol
@@ -420,6 +393,16 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                     candlestickSeries?.setData(data)
                     Log.d("ChartFragment", "Loaded ${lastCandles.size} candles")
                     updateIndicators()
+
+                    // --- Streaming Implementation (subscribe) ---
+                    klineWebSocket.subscribe(
+                        symbol = symbol,
+                        interval = interval,
+                        onBar = { bar -> handleRealtimeBar(bar) },
+                        onError = { e ->
+                            Log.e("ChartFragment", "WS error: ${e.message}", e)
+                        }
+                    )
                 }
             },
             onError = {
@@ -428,69 +411,107 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         )
     }
 
-    // ----------------- Indicator switching -----------------
+    // ----------------- Streaming handler (lightweight-charts style) -----------------
 
-    private fun updateIndicators() {
+    private fun handleRealtimeBar(bar: KlineBar) {
         if (lastCandles.isEmpty()) {
-            Log.w("ChartFragment", "updateIndicators: no candles yet")
+            Log.w("RT_BAR", "No candles yet, ignoring realtime bar")
             return
         }
+
+        val current = lastCandles
+        val last = current.last()
+
+        Log.d(
+            "RT_BAR",
+            "Incoming bar time=${bar.time}, last.time=${last.time}, " +
+                    "open=${bar.open}, high=${bar.high}, low=${bar.low}, close=${bar.close}"
+        )
+
+        val updatedList: List<Candle> = when {
+            bar.time == last.time -> {
+                Log.d("RT_BAR", "Updating last candle")
+                current.dropLast(1) + Candle(
+                    time = bar.time,
+                    open = bar.open,
+                    high = bar.high,
+                    low = bar.low,
+                    close = bar.close
+                )
+            }
+            bar.time > last.time -> {
+                Log.d("RT_BAR", "Appending new candle")
+                current + Candle(
+                    time = bar.time,
+                    open = bar.open,
+                    high = bar.high,
+                    low = bar.low,
+                    close = bar.close
+                )
+            }
+            else -> {
+                Log.d("RT_BAR", "Old candle, ignoring")
+                return
+            }
+        }
+
+        lastCandles = updatedList
+
+        val listForChart = updatedList.map {
+            CandlestickData(
+                time = Time.Utc(it.time),  // it.time is SECONDS
+                open = it.open,
+                high = it.high,
+                low = it.low,
+                close = it.close
+            )
+        }
+
+        activity?.runOnUiThread {
+            Log.d("RT_BAR", "Pushing ${listForChart.size} candles to chart")
+            candlestickSeries?.setData(listForChart)
+            updateIndicators()
+        }
+    }
+
+
+    // ----------------- Indicator logic -----------------
+
+    private fun updateIndicators() {
+        if (lastCandles.isEmpty()) return
 
         clearAllIndicators()
 
         when (activeIndicator) {
             ActiveIndicator.NONE -> {
-                Log.d("ChartFragment", "No indicator active")
+                // nothing
             }
-            ActiveIndicator.MACRO -> {
-                Log.d("ChartFragment", "Applying MACRO indicator")
-                macroIndicator?.render(lastCandles, true)
-            }
-            ActiveIndicator.EMA -> {
-                Log.d("ChartFragment", "Applying EMA 12 indicator")
-                ema12Indicator?.render(lastCandles)
-            }
-            ActiveIndicator.MA -> {
-                Log.d("ChartFragment", "Applying MA indicator")
-                maIndicator?.render(lastCandles)
-            }
-            ActiveIndicator.BB -> {
-                Log.d("ChartFragment", "Applying Bollinger Bands indicator")
-                bbIndicator?.render(lastCandles)
-            }
-            ActiveIndicator.DON -> {
-                Log.d("ChartFragment", "Applying Donchian Channels indicator")
-                donIndicator?.render(lastCandles)
-            }
-            ActiveIndicator.RECENT_HL -> {
-                Log.d("ChartFragment", "Applying Recent High/Low indicator")
-                recentHLIndicator?.render(lastCandles)
-            }
+            ActiveIndicator.MACRO -> macroIndicator?.render(lastCandles, true)
+            ActiveIndicator.EMA -> ema12Indicator?.render(lastCandles)
+            ActiveIndicator.MA -> maIndicator?.render(lastCandles)
+            ActiveIndicator.BB -> bbIndicator?.render(lastCandles)
+            ActiveIndicator.DON -> donIndicator?.render(lastCandles)
+            ActiveIndicator.RECENT_HL -> recentHLIndicator?.render(lastCandles)
         }
     }
 
-    /**
-     * Clears all overlay indicators (lines + markers) from chart.
-     * Candles remain.
-     */
     private fun clearAllIndicators() {
-        // Macro EMAs + markers
         fastEmaSeries?.setData(emptyList())
         slowEmaSeries?.setData(emptyList())
         biasEmaSeries?.setData(emptyList())
         candlestickSeries?.setMarkers(emptyList())
 
-        // EMA 12
         ema12Series?.setData(emptyList())
-
-        // MA
         maSeries?.setData(emptyList())
 
-        // Bands / channels
         bbIndicator?.clear()
         donIndicator?.clear()
 
-        // Recent HL
         recentHLIndicator?.clear()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        klineWebSocket.disconnect()
     }
 }
