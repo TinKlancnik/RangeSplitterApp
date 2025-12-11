@@ -1,28 +1,29 @@
 package com.example.rangesplitter
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
 import android.view.LayoutInflater
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
-import com.example.rangesplitter.Coin
-import com.example.rangesplitter.SortMode
-import com.example.rangesplitter.TradeUtils
-import android.widget.Toast
+import com.example.rangesplitter.ws.BybitLinearTickerWebSocket
+import com.example.rangesplitter.ws.BybitLinearTickerWebSocket.TickerListener
+import com.example.rangesplitter.ws.BybitLinearTickerWebSocket.TickerUpdate
 
+class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListener {
 
-class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
+    // ---------------- ADAPTER ----------------
 
     private class CoinAdapter(
         private val items: List<Coin>,
+        private val tickerMap: Map<String, TickerUpdate>,
         private val onClick: (Coin) -> Unit
     ) : RecyclerView.Adapter<CoinAdapter.CoinViewHolder>() {
 
@@ -42,20 +43,43 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
         override fun onBindViewHolder(holder: CoinViewHolder, position: Int) {
             val coin = items[position]
 
-            // Base asset from pair, e.g. "BTCUSDT" -> "BTC"
+            // Base asset from pair, e.g. "BTCUSDT" -> "BTC" (simple heuristic)
             val base = coin.symbol.takeWhile { it.isLetter() }
+                .ifEmpty { coin.symbol }
 
             holder.symbol.text = base
             holder.name.text = coin.symbol
-            holder.price.text = coin.priceText
-            holder.change.text = coin.changeText
+
+            // Normalize symbol for WebSocket (strip ".P" etc if you use that)
+            val wsSymbol = normalizeSymbolForWs(coin.symbol)
+            val ticker = tickerMap[wsSymbol]
+
+            // Choose best available live price: mark > index > last > REST snapshot
+            val livePrice = when {
+                ticker?.markPrice != null  -> ticker.markPrice
+                ticker?.indexPrice != null -> ticker.indexPrice
+                ticker?.lastPrice != null  -> ticker.lastPrice
+                else                       -> null
+            }
+
+            val priceText = livePrice?.let { String.format("%.4f", it) } ?: coin.priceText
+            holder.price.text = priceText
+
+            // 24h change (in %)
+            val changeValue = when {
+                ticker?.price24hPcnt != null -> ticker.price24hPcnt * 100.0   // Bybit gives fraction, e.g. 0.0123
+                else -> coin.changeValue
+            }
+
+            val changeText = String.format("%.2f%%", changeValue)
+            holder.change.text = changeText
 
             // Color by sign
             val ctx = holder.itemView.context
-            val colorRes = if (coin.changeValue >= 0.0) {
+            val colorRes = if (changeValue >= 0.0) {
                 R.color.vibrant_green
             } else {
-                R.color.vibrant_red   // your red color
+                R.color.vibrant_red
             }
             holder.change.setTextColor(ctx.getColor(colorRes))
 
@@ -63,9 +87,14 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
         }
 
         override fun getItemCount(): Int = items.size
+
+        private fun normalizeSymbolForWs(symbol: String): String {
+            // If your Coin symbols are like "BTCUSDT.P", strip suffix for WebSocket:
+            return symbol.removeSuffix(".P")
+        }
     }
 
-    // --- views & data ---
+    // ---------------- FIELDS ----------------
 
     private lateinit var searchInput: MaterialAutoCompleteTextView
     private lateinit var recycler: RecyclerView
@@ -78,26 +107,35 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
     private var selectedSymbol: String = "BTCUSDT"
     private var sortMode: SortMode = SortMode.VOLUME
 
-    private val updateInterval: Long = 5_000
-    private val handler = Handler(Looper.getMainLooper())
+    // WebSocket ticker data cache (key: wsSymbol, e.g. "BTCUSDT")
+    private val tickerMap = mutableMapOf<String, TickerUpdate>()
 
-    // --- lifecycle ---
+    // ---------------- LIFECYCLE ----------------
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         searchInput = view.findViewById(R.id.coinList)
         recycler = view.findViewById(R.id.recyclerCoins)
-        filterGroup = view.findViewById(R.id.filterGroup)   // ChipGroup in XML
+        filterGroup = view.findViewById(R.id.filterGroup)
 
         // RecyclerView setup
-        coinAdapter = CoinAdapter(visibleCoins) { coin ->
+        coinAdapter = CoinAdapter(
+            visibleCoins,
+            tickerMap
+        ) { coin ->
             selectedSymbol = coin.symbol
             openSplitFragment(coin.symbol)
         }
 
         recycler.layoutManager = LinearLayoutManager(requireContext())
         recycler.adapter = coinAdapter
+
+        // 🔧 Disable change animations to remove flicker
+        (recycler.itemAnimator as? SimpleItemAnimator)?.apply {
+            supportsChangeAnimations = false
+            changeDuration = 0L
+        }
 
         // Filter list as user types
         searchInput.addTextChangedListener { text ->
@@ -129,26 +167,39 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
                 else -> SortMode.VOLUME
             }
 
+            // Re-fetch list when sort changes (REST used only occasionally)
             fetchTopCoinsWithPrices(limit = 50)
         }
 
+        // Start listening to WebSocket updates
+        BybitLinearTickerWebSocket.addListener(this)
+
+        // Initial load of top coins via REST (one-time snapshot)
         fetchTopCoinsWithPrices(limit = 50)
-        startPriceUpdates()
     }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        // Stop listening to WebSocket updates from this fragment
+        BybitLinearTickerWebSocket.removeListener(this)
+
+        // Unsubscribe from all current symbols (optional but cleaner)
+        unsubscribeForCurrentCoins()
+    }
+
+    // ---------------- NAVIGATION ----------------
 
     private fun openSplitFragment(symbol: String) {
         (requireActivity() as MainActivity).openSplitForSymbol(symbol)
     }
 
-    private fun startPriceUpdates() {
-        handler.post(object : Runnable {
-            override fun run() {
-                fetchTopCoinsWithPrices(limit = 50)
-                handler.postDelayed(this, updateInterval)
-            }
-        })
-    }
+    // ---------------- REST → INITIAL LIST ----------------
+
     private fun fetchTopCoinsWithPrices(limit: Int = 50) {
+        // Before replacing the list, unsubscribe from old ones
+        unsubscribeForCurrentCoins()
+
         TradeUtils.fetchTopCoinsWithPrices(
             sortMode = sortMode,
             limit = limit,
@@ -159,6 +210,9 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
                 allCoins.addAll(coins)
                 visibleCoins.addAll(coins)
 
+                // Subscribe WebSocket for new list of coins
+                subscribeForCurrentCoins()
+
                 coinAdapter.notifyDataSetChanged()
             },
             onError = { msg ->
@@ -166,8 +220,41 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select) {
             }
         )
     }
-    override fun onDestroyView() {
-        super.onDestroyView()
-        handler.removeCallbacksAndMessages(null)
+
+    private fun subscribeForCurrentCoins() {
+        for (coin in allCoins) {
+            val wsSymbol = normalizeSymbolForWs(coin.symbol)
+            BybitLinearTickerWebSocket.subscribe(wsSymbol)
+        }
+    }
+
+    private fun unsubscribeForCurrentCoins() {
+        for (coin in allCoins) {
+            val wsSymbol = normalizeSymbolForWs(coin.symbol)
+            BybitLinearTickerWebSocket.unsubscribe(wsSymbol)
+        }
+    }
+
+    private fun normalizeSymbolForWs(symbol: String): String {
+        // If your `Coin.symbol` is "BTCUSDT.P", map it to "BTCUSDT" for Bybit WS topic
+        return symbol.removeSuffix(".P")
+    }
+
+    // ---------------- WEBSOCKET LISTENER ----------------
+
+    override fun onTicker(update: TickerUpdate) {
+        // Save latest merged update for this symbol (symbol is already WS symbol, e.g. "BTCUSDT")
+        tickerMap[update.symbol] = update
+
+        // Find visible index for this symbol so we can refresh only that row
+        val index = visibleCoins.indexOfFirst {
+            normalizeSymbolForWs(it.symbol) == update.symbol
+        }
+
+        if (index != -1) {
+            activity?.runOnUiThread {
+                coinAdapter.notifyItemChanged(index)
+            }
+        }
     }
 }
