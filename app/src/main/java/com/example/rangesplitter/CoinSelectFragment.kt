@@ -203,7 +203,10 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
         TradeUtils.fetchTopCoinsWithPrices(
             sortMode = sortMode,
             limit = limit,
-            onSuccess = { coins ->
+            onSuccess = onSuccess@{ coins ->
+                // Fragment might already be detached when the network call finishes
+                if (!isAdded) return@onSuccess
+
                 allCoins.clear()
                 visibleCoins.clear()
 
@@ -215,11 +218,18 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
 
                 coinAdapter.notifyDataSetChanged()
             },
-            onError = { msg ->
-                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+            onError = onError@{ msg ->
+                // Fragment might already be detached here too
+                if (!isAdded) return@onError
+
+                // Use safe context access instead of requireContext()
+                context?.let {
+                    Toast.makeText(it, msg, Toast.LENGTH_SHORT).show()
+                }
             }
         )
     }
+
 
     private fun subscribeForCurrentCoins() {
         for (coin in allCoins) {

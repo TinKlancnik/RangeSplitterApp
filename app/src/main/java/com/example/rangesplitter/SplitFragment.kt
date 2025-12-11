@@ -2,8 +2,6 @@ package com.example.rangesplitter
 
 import android.content.Context.INPUT_METHOD_SERVICE
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -16,8 +14,6 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import bybit.sdk.rest.APIResponseV5
 import bybit.sdk.rest.ByBitRestApiCallback
-import bybit.sdk.rest.ByBitRestClient
-import bybit.sdk.rest.okHttpClientProvider
 import bybit.sdk.rest.order.PlaceOrderParams
 import bybit.sdk.rest.order.PlaceOrderResponse
 import bybit.sdk.rest.position.LeverageParams
@@ -25,13 +21,15 @@ import bybit.sdk.shared.Category
 import bybit.sdk.shared.OrderType
 import bybit.sdk.shared.Side
 import bybit.sdk.shared.TimeInForce
+import com.example.rangesplitter.ws.BybitLinearTickerWebSocket
+import com.example.rangesplitter.ws.BybitLinearTickerWebSocket.TickerListener
+import com.example.rangesplitter.ws.BybitLinearTickerWebSocket.TickerUpdate
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import org.json.JSONObject
+import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.max
 
-class SplitFragment : Fragment(R.layout.fragment_split) {
+class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
     companion object {
         private const val ARG_SYMBOL = "symbol"
@@ -47,9 +45,6 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
 
     private lateinit var symbol: String
 
-    private val updateInterval: Long = 1_000
-    private val handler = Handler(Looper.getMainLooper())
-
     private lateinit var coinPriceTextView: TextView
     private lateinit var coinNameTextView: TextView
 
@@ -59,8 +54,6 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // ✅ RECEIVE THE SYMBOL HERE
         symbol = arguments?.getString(ARG_SYMBOL) ?: "BTCUSDT"
         Log.d("SplitFragment", "Received symbol: $symbol")
     }
@@ -71,8 +64,13 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         coinNameTextView = view.findViewById(R.id.coinName)
         coinPriceTextView = view.findViewById(R.id.coinPrice)
 
-        // show the symbol at the top
+        // show symbol at the top
         coinNameTextView.text = symbol
+
+        // WebSocket price subscription
+        val wsSymbol = normalizeSymbolForWs(symbol)
+        BybitLinearTickerWebSocket.addListener(this)
+        BybitLinearTickerWebSocket.subscribe(wsSymbol)
 
         val spinner = view.findViewById<Spinner>(R.id.spinnerValues)
         val rangeTopEditText = view.findViewById<EditText>(R.id.editTextRangeTop)
@@ -91,6 +89,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         spinner.adapter = spinnerAdapter
         spinner.setSelection(0)
 
+        // fetch balance once
         TradeUtils.fetchBalance { balance ->
             totalBalance = balance
             Log.d("SplitFragment", "Fetched balance: $totalBalance")
@@ -105,7 +104,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
             requireActivity().findViewById<View>(R.id.fragmentContainer).visibility = View.GONE
         }
 
-        buyButton.setOnClickListener {
+        buyButton.setOnClickListener { btn ->
             val riskStr = view.findViewById<TextView>(R.id.risk).text.toString()
             val risk = riskStr.toFloatOrNull() ?: 0f
 
@@ -114,22 +113,26 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
             val numberOfValues = spinner.selectedItem.toString().toIntOrNull() ?: 0
             val sl = stopLoss?.toFloatOrNull()
 
+            val balanceFloat = totalBalance
+                .replace(",", "")
+                .toFloatOrNull() ?: 0f
+
             if (sl != null && totalBalance.isNotEmpty()) {
                 val positionData = calculatePositionSizes(
                     top = rangeTop,
                     low = rangeLow,
                     sl = sl,
-                    totalBalance = totalBalance.toFloat(),
+                    totalBalance = balanceFloat,
                     numberOfBids = numberOfValues,
                     totalRiskPercent = risk
                 )
 
                 for ((price, amount) in positionData) {
-                    val intAmount = amount.toInt()
-                    placeATrade(price.toString(), intAmount.toString(), Side.Buy)
+                    val qtyStr = adjustQtyForSymbol(amount) ?: continue
+                    placeATrade(price.toString(), qtyStr, Side.Buy)
                 }
 
-                closeKeyboard(it)
+                closeKeyboard(btn)
             } else {
                 Toast.makeText(
                     requireContext(),
@@ -139,7 +142,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
             }
         }
 
-        sellButton.setOnClickListener {
+        sellButton.setOnClickListener { btn ->
             val riskStr = view.findViewById<TextView>(R.id.risk).text.toString()
             val risk = riskStr.toFloatOrNull() ?: 0f
 
@@ -148,22 +151,27 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
             val numberOfValues = spinner.selectedItem.toString().toIntOrNull() ?: 0
             val sl = stopLoss?.toFloatOrNull()
 
+            val balanceFloat = totalBalance
+                .replace(",", "")
+                .toFloatOrNull() ?: 0f
+
             if (sl != null && totalBalance.isNotEmpty()) {
                 val positionData = calculatePositionSizes(
                     top = rangeTop,
                     low = rangeLow,
                     sl = sl,
-                    totalBalance = totalBalance.toFloat(),
+                    totalBalance = balanceFloat,
                     numberOfBids = numberOfValues,
                     totalRiskPercent = risk
                 )
 
                 for ((price, amount) in positionData) {
-                    val intAmount = amount.toInt()
-                    placeATrade(price.toString(), intAmount.toString(), Side.Sell)
+                    val qtyStr = adjustQtyForSymbol(amount) ?: continue
+                    placeATrade(price.toString(), qtyStr, Side.Sell)
                 }
 
-                closeKeyboard(it)
+
+                closeKeyboard(btn)
             } else {
                 Toast.makeText(
                     requireContext(),
@@ -172,9 +180,13 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
                 ).show()
             }
         }
+    }
 
-        // start price polling
-        startPriceUpdates()
+    override fun onDestroyView() {
+        super.onDestroyView()
+        val wsSymbol = normalizeSymbolForWs(symbol)
+        BybitLinearTickerWebSocket.unsubscribe(wsSymbol)
+        BybitLinearTickerWebSocket.removeListener(this)
     }
 
     // ---------------- SL/TP dialog ----------------
@@ -252,7 +264,7 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         leverage(midBidPrice, sl)
 
         return bidPrices.map { price ->
-            val risk = kotlin.math.abs(price - sl)
+            val risk = abs(price - sl)
             val positionSize = if (risk > 0) riskPerBid / risk else 0f
             Pair(price, positionSize)
         }
@@ -287,11 +299,14 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         val callback = object : ByBitRestApiCallback<PlaceOrderResponse> {
             override fun onSuccess(result: PlaceOrderResponse) {
                 Log.d("Trade", "Trade placed successfully: $result")
-                showTradeResultDialog("Success", "Trade placed successfully for $symbol at $price.")
+                showTradeResultDialog(
+                    "Success",
+                    "Trade placed successfully for $symbol at $price (qty $amount)."
+                )
             }
 
             override fun onError(error: Throwable) {
-                Log.e("Trade", "Error encountered: ${error.message}")
+                Log.e("Trade", "Error encountered: ${error.message}", error)
                 showTradeResultDialog("Error", "Failed to place trade: ${error.message}")
             }
         }
@@ -301,7 +316,8 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
 
     private fun showTradeResultDialog(title: String, message: String) {
         activity?.runOnUiThread {
-            val dialogBuilder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            val ctx = context ?: return@runOnUiThread
+            val dialogBuilder = androidx.appcompat.app.AlertDialog.Builder(ctx)
             dialogBuilder.setTitle(title)
             dialogBuilder.setMessage(message)
             dialogBuilder.setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
@@ -309,51 +325,43 @@ class SplitFragment : Fragment(R.layout.fragment_split) {
         }
     }
 
-    // ---------------- price updates ----------------
+    // ---------------- WebSocket price listener ----------------
 
-    private fun startPriceUpdates() {
-        handler.post(object : Runnable {
-            override fun run() {
-                fetchCoinPrice(symbol)
-                handler.postDelayed(this, updateInterval)
+    private fun normalizeSymbolForWs(sym: String): String = sym.removeSuffix(".P")
+
+    override fun onTicker(update: TickerUpdate) {
+        val wsSymbol = normalizeSymbolForWs(symbol)
+        if (update.symbol != wsSymbol) return
+
+        val price = update.markPrice ?: update.indexPrice ?: update.lastPrice
+        price?.let {
+            activity?.runOnUiThread {
+                coinPriceTextView.text = String.format(Locale.US, "%.2f", it)
             }
-        })
+        }
+    }
+    private fun adjustQtyForSymbol(rawQty: Float): String? {
+        if (rawQty <= 0f) return null
+
+        // crude per-symbol rules; you can refine these later or fetch from instrumentsInfo
+        val (minQty, step, decimals) = when {
+            symbol.startsWith("BTC") -> Triple(0.001, 0.001, 3)
+            symbol.startsWith("ETH") -> Triple(0.01, 0.01, 2)
+            else -> Triple(0.1, 0.1, 1)   // default for smaller alts; adjust if needed
+        }
+
+        val raw = rawQty.toDouble()
+
+        // snap down to nearest step
+        val steps = kotlin.math.floor(raw / step + 1e-9)
+        val normalized = steps * step
+
+        if (normalized < minQty) {
+            // too small to be valid
+            return null
+        }
+
+        return String.format(Locale.US, "%.${decimals}f", normalized)
     }
 
-    private fun fetchCoinPrice(symbol: String) {
-        val client = OkHttpClient()
-        val url = "https://api-testnet.bybit.com/v5/market/tickers?category=linear&symbol=$symbol"
-
-        val request = Request.Builder()
-            .url(url)
-            .build()
-
-        Thread {
-            try {
-                val response: Response = client.newCall(request).execute()
-
-                if (response.isSuccessful) {
-                    val jsonResponse = JSONObject(response.body?.string() ?: "")
-                    val result = jsonResponse.getJSONObject("result")
-
-                    if (result.length() > 0) {
-                        val ticker = result.getJSONArray("list").getJSONObject(0)
-                        val lastPrice = ticker.getString("lastPrice")
-
-                        activity?.runOnUiThread {
-                            coinPriceTextView.text = lastPrice
-                        }
-
-                        Log.d("CoinPrice", "Last price for $symbol: $lastPrice")
-                    } else {
-                        Log.d("CoinPrice", "No data available for $symbol.")
-                    }
-                } else {
-                    Log.d("CoinPrice", "Failed to fetch coin price.")
-                }
-            } catch (e: Exception) {
-                Log.d("CoinPrice", "Error: ${e.message}")
-            }
-        }.start()
-    }
 }

@@ -238,7 +238,7 @@ object TradeUtils {
 
                 val totalEquity = response.result?.list?.firstOrNull()?.totalEquity
                 val formattedBalance = totalEquity?.toDoubleOrNull()?.let {
-                    String.format("%.2f", it)
+                    String.format("%,.2f", it)
                 } ?: "Error"
 
                 withContext(Dispatchers.Main) {
