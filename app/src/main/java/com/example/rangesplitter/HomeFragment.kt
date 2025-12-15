@@ -10,9 +10,10 @@ import com.example.rangesplitter.UI.ViewPagerAdapter
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 
-class MenuFragment : Fragment(R.layout.fragment_menu) {
+class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private lateinit var balanceTextView: TextView
+    private lateinit var totalValueChange: TextView
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
@@ -21,12 +22,24 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
         super.onViewCreated(view, savedInstanceState)
 
         balanceTextView = view.findViewById(R.id.balanceTextView)
+        totalValueChange = view.findViewById(R.id.totalValueChange)
         viewPager = view.findViewById(R.id.viewPager)
         tabLayout = view.findViewById(R.id.tabLayout)
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout)
 
         TradeUtils.fetchBalance { balance ->
             balanceTextView.text = "$balance USD"
+        }
+
+        TradeUtils.fetchTotalValueChange { formatted, value ->
+            totalValueChange.text = "$formatted USD"
+
+            val colorRes = if (value >= 0)
+                R.color.vibrant_green
+            else
+                R.color.vibrant_red
+
+            totalValueChange.setTextColor(requireContext().getColor(colorRes))
         }
 
         val adapter = ViewPagerAdapter(this)   // ⬅️ changed from requireActivity()

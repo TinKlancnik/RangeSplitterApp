@@ -38,7 +38,6 @@ class MainActivity : AppCompatActivity() {
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-                // Disable swipe refresh for Chart tab (index 2)
                 swipeRefreshLayout.isEnabled = position != 2
             }
         })
@@ -53,6 +52,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupBottomNavActiveColor()
+
+        bottomNav.itemBackground = null
+        bottomNav.itemRippleColor = null
+
+        bottomNav.isItemActiveIndicatorEnabled = false
+
     }
 
     fun openSplitForSymbol(symbol: String) {
@@ -63,8 +68,8 @@ class MainActivity : AppCompatActivity() {
         val fragment = SplitFragment.newInstance(symbol)
 
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, fragment, "SPLIT") // ✅ tag it
-            .commit()                                          // ✅ no backstack
+            .replace(R.id.fragmentContainer, fragment, "SPLIT")
+            .commit()
     }
 
     private fun refreshCurrentFragment() {

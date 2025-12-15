@@ -18,8 +18,8 @@
         android:layout_gravity="center"
         android:layout_marginBottom="32dp"/>
 
-    <!-- Username Field -->
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/emailLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
@@ -37,8 +37,8 @@
             android:textColor="@color/textPrimary"/>
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Password Field -->
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/passwordLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="24dp"
@@ -53,7 +53,7 @@
             android:layout_height="wrap_content"
             android:hint="Password"
             android:inputType="textPassword"
-            android:textColor="@android:color/black"/>
+            android:textColor="@color/textPrimary"/>
     </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Login Button -->

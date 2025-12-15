@@ -1,12 +1,15 @@
 package com.example.rangesplitter
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.auth.FirebaseAuth   // 👈 IMPORTANT import
 
 class StartActivity : AppCompatActivity() {
@@ -17,7 +20,19 @@ class StartActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_start)
 
-        // UI setup
+        val emailLayout = findViewById<TextInputLayout>(R.id.emailLayout)
+        val passwordLayout = findViewById<TextInputLayout>(R.id.passwordLayout)
+
+        val strokeColor = ContextCompat.getColor(this, R.color.primaryAccent)
+
+        emailLayout.setBoxStrokeColor(strokeColor)
+        passwordLayout.setBoxStrokeColor(strokeColor)
+
+        val hintColor = ContextCompat.getColor(this, R.color.textMuted) // or primaryAccent
+        emailLayout.defaultHintTextColor = ColorStateList.valueOf(hintColor)
+        passwordLayout.defaultHintTextColor  = ColorStateList.valueOf(hintColor)
+
+
         supportActionBar?.hide()
         window.navigationBarColor = resources.getColor(android.R.color.black)
 

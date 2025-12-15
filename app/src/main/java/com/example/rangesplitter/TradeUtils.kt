@@ -383,4 +383,43 @@ object TradeUtils {
             else                 -> String.format("%.2f", value)
         }
     }
+    fun fetchTotalValueChange(onResult: (formatted: String, value: Double) -> Unit) {
+        val client = BybitClientManager.client
+        val params = PositionInfoParams(
+            category = Category.linear,
+            settleCoin = "USDT"
+        )
+
+        client.positionClient.getPositionInfo(
+            params,
+            object : ByBitRestApiCallback<PositionInfoResponse> {
+
+                override fun onSuccess(result: PositionInfoResponse) {
+                    val totalPnl = result.result.list.sumOf {
+                        it.unrealisedPnl
+                            ?.replace(",", "")
+                            ?.toDoubleOrNull() ?: 0.0
+                    }
+
+                    val formatted = if (totalPnl >= 0) {
+                        "+${String.format("%,.2f", totalPnl)}"
+                    } else {
+                        String.format("%,.2f", totalPnl)
+                    }
+
+                    Handler(Looper.getMainLooper()).post {
+                        onResult(formatted, totalPnl)
+                    }
+                }
+
+                override fun onError(error: Throwable) {
+                    Log.e("TotalValueChange", "Error: ${error.message}")
+                    Handler(Looper.getMainLooper()).post {
+                        onResult("0.00", 0.0)
+                    }
+                }
+            }
+        )
+    }
+
 }

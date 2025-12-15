@@ -43,18 +43,15 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
         override fun onBindViewHolder(holder: CoinViewHolder, position: Int) {
             val coin = items[position]
 
-            // Base asset from pair, e.g. "BTCUSDT" -> "BTC" (simple heuristic)
             val base = coin.symbol.takeWhile { it.isLetter() }
                 .ifEmpty { coin.symbol }
 
             holder.symbol.text = base
-            holder.name.text = coin.symbol
+            holder.name.text = coin.symbol.removeSuffix("USDT")
 
-            // Normalize symbol for WebSocket (strip ".P" etc if you use that)
             val wsSymbol = normalizeSymbolForWs(coin.symbol)
             val ticker = tickerMap[wsSymbol]
 
-            // Choose best available live price: mark > index > last > REST snapshot
             val livePrice = when {
                 ticker?.markPrice != null  -> ticker.markPrice
                 ticker?.indexPrice != null -> ticker.indexPrice
@@ -65,7 +62,6 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
             val priceText = livePrice?.let { String.format("%.4f", it) } ?: coin.priceText
             holder.price.text = priceText
 
-            // 24h change (in %)
             val changeValue = when {
                 ticker?.price24hPcnt != null -> ticker.price24hPcnt * 100.0   // Bybit gives fraction, e.g. 0.0123
                 else -> coin.changeValue
@@ -74,7 +70,6 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
             val changeText = String.format("%.2f%%", changeValue)
             holder.change.text = changeText
 
-            // Color by sign
             val ctx = holder.itemView.context
             val colorRes = if (changeValue >= 0.0) {
                 R.color.vibrant_green
