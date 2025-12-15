@@ -1,5 +1,6 @@
 package com.example.rangesplitter.UI
 
+import android.view.View
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.example.rangesplitter.MenuFragment
@@ -15,12 +16,19 @@ object NavigationHelper {
         bottomNav: BottomNavigationView,
         viewPager: ViewPager2
     ) {
-        // Set up ViewPager2 adapter with your custom adapter
         val adapter = MainPageAdapter(fragmentActivity.supportFragmentManager, fragmentActivity.lifecycle)
         viewPager.adapter = adapter
 
-        // Set up BottomNavigationView to handle fragment switching
         bottomNav.setOnItemSelectedListener { item ->
+
+            // ✅ close Split overlay if it's open
+            fragmentActivity.supportFragmentManager.findFragmentByTag("SPLIT")?.let { split ->
+                fragmentActivity.supportFragmentManager.beginTransaction()
+                    .remove(split)
+                    .commit()
+                fragmentActivity.findViewById<View>(R.id.fragmentContainer).visibility = View.GONE
+            }
+
             val position = when (item.itemId) {
                 R.id.nav_home -> 0
                 R.id.nav_trade -> 3
@@ -31,10 +39,10 @@ object NavigationHelper {
             true
         }
 
-        // Optional: Sync the ViewPager2 swipe with the BottomNavigationView
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
+
                 val itemId = when (position) {
                     0 -> R.id.nav_home
                     3 -> R.id.nav_trade
@@ -42,9 +50,9 @@ object NavigationHelper {
                     else -> R.id.nav_home
                 }
                 bottomNav.selectedItemId = itemId
-
                 viewPager.isUserInputEnabled = position != 2
             }
         })
     }
 }
+

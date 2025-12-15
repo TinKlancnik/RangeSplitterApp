@@ -57,18 +57,14 @@ class MainActivity : AppCompatActivity() {
 
     fun openSplitForSymbol(symbol: String) {
 
-        // make the container visible
+        // show overlay container
         findViewById<View>(R.id.fragmentContainer).visibility = View.VISIBLE
 
         val fragment = SplitFragment.newInstance(symbol)
 
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, fragment)
-            .addToBackStack(null)
-            .commit()
-    }
-    fun openCoinSelect() {
-        viewPager.currentItem = 3
+            .replace(R.id.fragmentContainer, fragment, "SPLIT") // ✅ tag it
+            .commit()                                          // ✅ no backstack
     }
 
     private fun refreshCurrentFragment() {
