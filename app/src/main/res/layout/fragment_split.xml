@@ -9,6 +9,18 @@
     android:paddingHorizontal="24dp"
     android:paddingTop="24dp">
 
+    <Button
+        android:id="@+id/setSlTpButton2"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/black"
+        android:text="Set SL / TP"
+        android:textColor="@color/buttonTextColor"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/spinnerRow" />
+
     <ImageButton
         android:id="@+id/backButton"
         android:layout_width="36dp"
@@ -152,5 +164,67 @@
             android:text="Sell / Short"
             android:textColor="@color/buttonTextColor" />
     </LinearLayout>
+
+    <View
+        android:id="@+id/buttonsDivider"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginStart="-50dp"
+        android:layout_marginEnd="-24dp"
+        android:background="@color/textMuted"
+        app:layout_constraintTop_toBottomOf="@id/linearLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- MARKET BUY / SELL BUTTONS -->
+    <LinearLayout
+        android:id="@+id/linearLayoutMarket"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="25dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/linearLayout">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonMarketBuy"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Market Buy"
+            android:textAllCaps="false"
+            android:textColor="@color/green"
+            app:cornerRadius="24dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="@color/green"
+            android:backgroundTint="#0D00FF00"
+            app:rippleColor="#2600FF00" />
+
+        <View
+            android:layout_width="16dp"
+            android:layout_height="match_parent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonMarketSell"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Market Sell"
+            android:textAllCaps="false"
+            android:textColor="@color/red"
+            app:cornerRadius="24dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="@color/red"
+            android:backgroundTint="#0DFF0000"
+            app:rippleColor="#26FF0000" />
+
+    </LinearLayout>
+
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

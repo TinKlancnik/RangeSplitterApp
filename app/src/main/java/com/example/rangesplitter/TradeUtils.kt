@@ -26,6 +26,11 @@ import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONObject
 import java.util.Locale
+import bybit.sdk.rest.order.PlaceOrderParams
+import bybit.sdk.rest.order.PlaceOrderResponse
+import bybit.sdk.shared.OrderType
+import bybit.sdk.shared.Side
+import bybit.sdk.shared.TimeInForce
 
 data class Coin(
     val symbol: String,
@@ -70,6 +75,15 @@ data class Candle(
     val close: Float
 )
 
+data class OrderRequest(
+    val symbol: String,
+    val side: Side,
+    val qty: String,
+    val takeProfit: String?,
+    val stopLoss: String?
+)
+
+
 object TradeUtils {
 
     // reuse single client + main-thread handler (for REST tickers)
@@ -84,17 +98,19 @@ object TradeUtils {
 
         client.orderClient.ordersOpen(params, object : ByBitRestApiCallback<OrdersOpenResponse> {
             override fun onSuccess(result: OrdersOpenResponse) {
-                val openOrders = result.result.list.map {
-                    OpenOrder(
-                        symbol = it.symbol,
-                        triggerPrice = it.price,
-                        side = it.side.toString(),
-                        quantity = it.qty,
-                        orderId = it.orderId,
-                        takeProfit = it.takeProfit,
-                        stopLoss = it.stopLoss
-                    )
-                }
+                val openOrders = result.result.list
+                    .filter { it.orderType != OrderType.Market }   // <--- add this
+                    .map {
+                        OpenOrder(
+                            symbol = it.symbol,
+                            triggerPrice = it.price,
+                            side = it.side.toString(),
+                            quantity = it.qty,
+                            orderId = it.orderId,
+                            takeProfit = it.takeProfit,
+                            stopLoss = it.stopLoss
+                        )
+                    }
 
                 recyclerView.post {
                     val adapter = OpenOrdersAdapter(openOrders) { order ->
@@ -421,5 +437,34 @@ object TradeUtils {
             }
         )
     }
+    private fun cleanNumber(text: String): String =
+        text.replace(",", "").trim()
 
+    fun placeMarketOrder(
+        order: OrderRequest,
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val client = BybitClientManager.client
+
+        val params = PlaceOrderParams(
+            category = Category.linear,
+            symbol = order.symbol,
+            side = order.side,
+            orderType = OrderType.Market,
+            qty = cleanNumber(order.qty),
+            takeProfit = order.takeProfit?.let { cleanNumber(it) },
+            stopLoss = order.stopLoss?.let { cleanNumber(it) }
+        )
+
+        client.orderClient.placeOrder(params, object : ByBitRestApiCallback<PlaceOrderResponse> {
+            override fun onSuccess(result: PlaceOrderResponse) {
+                onSuccess(result.result?.orderId ?: "N/A")
+            }
+
+            override fun onError(error: Throwable) {
+                onError(error.message ?: "Unknown error")
+            }
+        })
+    }
 }

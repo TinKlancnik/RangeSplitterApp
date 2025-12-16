@@ -77,6 +77,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
         val rangeLowEditText = view.findViewById<EditText>(R.id.editTextRangeLow)
         val buyButton = view.findViewById<Button>(R.id.buttonBuy)
         val sellButton = view.findViewById<Button>(R.id.buttonSell)
+        val buttonMarketBuy =view.findViewById<Button>(R.id.buttonMarketBuy)
+        val buttonMarketSell =view.findViewById<Button>(R.id.buttonMarketSell)
         val backButton = view.findViewById<ImageView>(R.id.backButton)
 
         val items = arrayOf(3, 5)
@@ -180,6 +182,60 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
                 ).show()
             }
         }
+
+        buttonMarketBuy.setOnClickListener { btn ->
+            val riskStr = view.findViewById<TextView>(R.id.risk).text.toString()
+            val risk = riskStr.toFloatOrNull() ?: 0f
+
+            val sl = stopLoss?.toFloatOrNull()
+            val balanceFloat = totalBalance.replace(",", "").toFloatOrNull() ?: 0f
+
+            val entry = coinPriceTextView.text.toString().replace(",", "").toFloatOrNull()
+
+            if (sl == null || entry == null || totalBalance.isEmpty()) {
+                Toast.makeText(requireContext(), "Set a valid Stop Loss and wait for price/balance", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val riskUsd = balanceFloat * (risk / 100f)
+            val riskPerCoin = abs(entry - sl)
+            val positionSizeCoins = if (riskPerCoin > 0f) (riskUsd / riskPerCoin) else 0f
+
+            val qtyStr = adjustQtyForSymbol(positionSizeCoins) ?: run {
+                Toast.makeText(requireContext(), "Qty too small for $symbol", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            placeMarketTrade(qtyStr, Side.Buy)
+            closeKeyboard(btn)
+        }
+
+        buttonMarketSell.setOnClickListener { btn ->
+            val riskStr = view.findViewById<TextView>(R.id.risk).text.toString()
+            val risk = riskStr.toFloatOrNull() ?: 0f
+
+            val sl = stopLoss?.toFloatOrNull()
+            val balanceFloat = totalBalance.replace(",", "").toFloatOrNull() ?: 0f
+            val entry = coinPriceTextView.text.toString().replace(",", "").toFloatOrNull()
+
+            if (sl == null || entry == null || totalBalance.isEmpty()) {
+                Toast.makeText(requireContext(), "Set a valid Stop Loss and wait for price/balance", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val riskUsd = balanceFloat * (risk / 100f)
+            val riskPerCoin = abs(entry - sl)
+            val positionSizeCoins = if (riskPerCoin > 0f) (riskUsd / riskPerCoin) else 0f
+
+            val qtyStr = adjustQtyForSymbol(positionSizeCoins) ?: run {
+                Toast.makeText(requireContext(), "Qty too small for $symbol", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            placeMarketTrade(qtyStr, Side.Sell)
+            closeKeyboard(btn)
+        }
+
     }
 
     override fun onDestroyView() {
@@ -313,6 +369,40 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
         bybitClient.orderClient.placeOrder(tradeParams, callback)
     }
+
+    private fun placeMarketTrade(amount: String, side: Side) {
+        val bybitClient = BybitClientManager.client
+
+        val tradeParams = PlaceOrderParams(
+            category = Category.linear,
+            symbol = symbol,
+            side = side,
+            orderType = OrderType.Market,
+            qty = amount,
+            stopLoss = stopLoss,
+            takeProfit = takeProfit,
+            reduceOnly = false
+            // timeInForce not needed for Market (Bybit treats it as IOC)
+        )
+
+        val callback = object : ByBitRestApiCallback<PlaceOrderResponse> {
+            override fun onSuccess(result: PlaceOrderResponse) {
+                Log.d("MarketTrade", "Market order placed successfully: $result")
+                showTradeResultDialog(
+                    "Success",
+                    "Market order placed successfully for $symbol (qty $amount)."
+                )
+            }
+
+            override fun onError(error: Throwable) {
+                Log.e("MarketTrade", "Error encountered: ${error.message}", error)
+                showTradeResultDialog("Error", "Failed to place market order: ${error.message}")
+            }
+        }
+
+        bybitClient.orderClient.placeOrder(tradeParams, callback)
+    }
+
 
     private fun showTradeResultDialog(title: String, message: String) {
         activity?.runOnUiThread {
