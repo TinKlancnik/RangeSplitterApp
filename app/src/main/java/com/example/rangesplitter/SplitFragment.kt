@@ -27,7 +27,6 @@ import com.example.rangesplitter.ws.BybitLinearTickerWebSocket.TickerUpdate
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.util.Locale
 import kotlin.math.abs
-import kotlin.math.max
 
 class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
@@ -52,6 +51,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
     private var stopLoss: String? = null
     private var takeProfit: String? = null
 
+    private var lotSize: LotSize? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         symbol = arguments?.getString(ARG_SYMBOL) ?: "BTCUSDT"
@@ -64,7 +65,6 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
         coinNameTextView = view.findViewById(R.id.coinName)
         coinPriceTextView = view.findViewById(R.id.coinPrice)
 
-        // show symbol at the top
         coinNameTextView.text = symbol
 
         // WebSocket price subscription
@@ -77,8 +77,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
         val rangeLowEditText = view.findViewById<EditText>(R.id.editTextRangeLow)
         val buyButton = view.findViewById<Button>(R.id.buttonBuy)
         val sellButton = view.findViewById<Button>(R.id.buttonSell)
-        val buttonMarketBuy =view.findViewById<Button>(R.id.buttonMarketBuy)
-        val buttonMarketSell =view.findViewById<Button>(R.id.buttonMarketSell)
+        val buttonMarketBuy = view.findViewById<Button>(R.id.buttonMarketBuy)
+        val buttonMarketSell = view.findViewById<Button>(R.id.buttonMarketSell)
         val backButton = view.findViewById<ImageView>(R.id.backButton)
 
         val items = arrayOf(3, 5)
@@ -97,6 +97,22 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             Log.d("SplitFragment", "Fetched balance: $totalBalance")
         }
 
+        // ✅ fetch lot size once
+        TradeUtils.fetchLotSize(
+            symbol = symbol,
+            category = Category.linear,
+            useTestnet = true, // change to false for mainnet
+            onSuccess = { lot ->
+                lotSize = lot
+                Log.d("LotSize", "Loaded $symbol lot size: min=${lot.minOrderQty}, step=${lot.qtyStep}")
+            },
+            onError = { msg ->
+                lotSize = null
+                Log.e("LotSize", msg)
+                Toast.makeText(requireContext(), "Lot size error: $msg", Toast.LENGTH_SHORT).show()
+            }
+        )
+
         view.findViewById<Button>(R.id.setSlTpButton).setOnClickListener {
             showSlTpDialog()
         }
@@ -106,6 +122,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             requireActivity().findViewById<View>(R.id.fragmentContainer).visibility = View.GONE
         }
 
+        // ---------------- LIMIT BUY ----------------
         buyButton.setOnClickListener { btn ->
             val riskStr = view.findViewById<TextView>(R.id.risk).text.toString()
             val risk = riskStr.toFloatOrNull() ?: 0f
@@ -115,9 +132,13 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             val numberOfValues = spinner.selectedItem.toString().toIntOrNull() ?: 0
             val sl = stopLoss?.toFloatOrNull()
 
-            val balanceFloat = totalBalance
-                .replace(",", "")
-                .toFloatOrNull() ?: 0f
+            val balanceFloat = totalBalance.replace(",", "").toFloatOrNull() ?: 0f
+
+            val lot = lotSize
+            if (lot == null) {
+                Toast.makeText(requireContext(), "Lot size not loaded yet", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
             if (sl != null && totalBalance.isNotEmpty()) {
                 val positionData = calculatePositionSizes(
@@ -130,7 +151,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
                 )
 
                 for ((price, amount) in positionData) {
-                    val qtyStr = adjustQtyForSymbol(amount) ?: continue
+                    val qtyStr = TradeUtils.adjustQtyToLotSize(amount.toDouble(), lot) ?: continue
                     placeATrade(price.toString(), qtyStr, Side.Buy)
                 }
 
@@ -144,6 +165,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             }
         }
 
+        // ---------------- LIMIT SELL ----------------
         sellButton.setOnClickListener { btn ->
             val riskStr = view.findViewById<TextView>(R.id.risk).text.toString()
             val risk = riskStr.toFloatOrNull() ?: 0f
@@ -153,9 +175,13 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             val numberOfValues = spinner.selectedItem.toString().toIntOrNull() ?: 0
             val sl = stopLoss?.toFloatOrNull()
 
-            val balanceFloat = totalBalance
-                .replace(",", "")
-                .toFloatOrNull() ?: 0f
+            val balanceFloat = totalBalance.replace(",", "").toFloatOrNull() ?: 0f
+
+            val lot = lotSize
+            if (lot == null) {
+                Toast.makeText(requireContext(), "Lot size not loaded yet", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
             if (sl != null && totalBalance.isNotEmpty()) {
                 val positionData = calculatePositionSizes(
@@ -168,10 +194,9 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
                 )
 
                 for ((price, amount) in positionData) {
-                    val qtyStr = adjustQtyForSymbol(amount) ?: continue
+                    val qtyStr = TradeUtils.adjustQtyToLotSize(amount.toDouble(), lot) ?: continue
                     placeATrade(price.toString(), qtyStr, Side.Sell)
                 }
-
 
                 closeKeyboard(btn)
             } else {
@@ -183,17 +208,27 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             }
         }
 
+        // ---------------- MARKET BUY ----------------
         buttonMarketBuy.setOnClickListener { btn ->
             val riskStr = view.findViewById<TextView>(R.id.risk).text.toString()
             val risk = riskStr.toFloatOrNull() ?: 0f
 
             val sl = stopLoss?.toFloatOrNull()
             val balanceFloat = totalBalance.replace(",", "").toFloatOrNull() ?: 0f
-
             val entry = coinPriceTextView.text.toString().replace(",", "").toFloatOrNull()
 
+            val lot = lotSize
+            if (lot == null) {
+                Toast.makeText(requireContext(), "Lot size not loaded yet", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             if (sl == null || entry == null || totalBalance.isEmpty()) {
-                Toast.makeText(requireContext(), "Set a valid Stop Loss and wait for price/balance", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Set a valid Stop Loss and wait for price/balance",
+                    Toast.LENGTH_SHORT
+                ).show()
                 return@setOnClickListener
             }
 
@@ -201,7 +236,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             val riskPerCoin = abs(entry - sl)
             val positionSizeCoins = if (riskPerCoin > 0f) (riskUsd / riskPerCoin) else 0f
 
-            val qtyStr = adjustQtyForSymbol(positionSizeCoins) ?: run {
+            val qtyStr = TradeUtils.adjustQtyToLotSize(positionSizeCoins.toDouble(), lot) ?: run {
                 Toast.makeText(requireContext(), "Qty too small for $symbol", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -210,6 +245,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             closeKeyboard(btn)
         }
 
+        // ---------------- MARKET SELL ----------------
         buttonMarketSell.setOnClickListener { btn ->
             val riskStr = view.findViewById<TextView>(R.id.risk).text.toString()
             val risk = riskStr.toFloatOrNull() ?: 0f
@@ -218,8 +254,18 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             val balanceFloat = totalBalance.replace(",", "").toFloatOrNull() ?: 0f
             val entry = coinPriceTextView.text.toString().replace(",", "").toFloatOrNull()
 
+            val lot = lotSize
+            if (lot == null) {
+                Toast.makeText(requireContext(), "Lot size not loaded yet", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             if (sl == null || entry == null || totalBalance.isEmpty()) {
-                Toast.makeText(requireContext(), "Set a valid Stop Loss and wait for price/balance", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Set a valid Stop Loss and wait for price/balance",
+                    Toast.LENGTH_SHORT
+                ).show()
                 return@setOnClickListener
             }
 
@@ -227,7 +273,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             val riskPerCoin = abs(entry - sl)
             val positionSizeCoins = if (riskPerCoin > 0f) (riskUsd / riskPerCoin) else 0f
 
-            val qtyStr = adjustQtyForSymbol(positionSizeCoins) ?: run {
+            val qtyStr = TradeUtils.adjustQtyToLotSize(positionSizeCoins.toDouble(), lot) ?: run {
                 Toast.makeText(requireContext(), "Qty too small for $symbol", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -235,7 +281,6 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             placeMarketTrade(qtyStr, Side.Sell)
             closeKeyboard(btn)
         }
-
     }
 
     override fun onDestroyView() {
@@ -382,7 +427,6 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             stopLoss = stopLoss,
             takeProfit = takeProfit,
             reduceOnly = false
-            // timeInForce not needed for Market (Bybit treats it as IOC)
         )
 
         val callback = object : ByBitRestApiCallback<PlaceOrderResponse> {
@@ -402,7 +446,6 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
         bybitClient.orderClient.placeOrder(tradeParams, callback)
     }
-
 
     private fun showTradeResultDialog(title: String, message: String) {
         activity?.runOnUiThread {
@@ -430,28 +473,4 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             }
         }
     }
-    private fun adjustQtyForSymbol(rawQty: Float): String? {
-        if (rawQty <= 0f) return null
-
-        // crude per-symbol rules; you can refine these later or fetch from instrumentsInfo
-        val (minQty, step, decimals) = when {
-            symbol.startsWith("BTC") -> Triple(0.001, 0.001, 3)
-            symbol.startsWith("ETH") -> Triple(0.01, 0.01, 2)
-            else -> Triple(0.1, 0.1, 1)   // default for smaller alts; adjust if needed
-        }
-
-        val raw = rawQty.toDouble()
-
-        // snap down to nearest step
-        val steps = kotlin.math.floor(raw / step + 1e-9)
-        val normalized = steps * step
-
-        if (normalized < minQty) {
-            // too small to be valid
-            return null
-        }
-
-        return String.format(Locale.US, "%.${decimals}f", normalized)
-    }
-
 }

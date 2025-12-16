@@ -83,6 +83,13 @@ data class OrderRequest(
     val stopLoss: String?
 )
 
+data class LotSize(
+    val minOrderQty: Double,
+    val qtyStep: Double,
+    val maxOrderQty: Double?,
+    val maxMktOrderQty: Double?,
+    val minNotionalValue: Double?
+)
 
 object TradeUtils {
 
@@ -467,4 +474,95 @@ object TradeUtils {
             }
         })
     }
+
+    private val lotSizeCache = mutableMapOf<String, LotSize>()
+
+    fun fetchLotSize(
+        symbol: String,
+        category: Category = Category.linear,
+        useTestnet: Boolean = true,
+        onSuccess: (LotSize) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        // cache (avoid calling every time)
+        lotSizeCache[symbol]?.let {
+            mainHandler.post { onSuccess(it) }
+            return
+        }
+
+        val baseUrl = if (useTestnet) "https://api-testnet.bybit.com" else "https://api.bybit.com"
+        val url = "$baseUrl/v5/market/instruments-info?category=${category.name.lowercase()}&symbol=$symbol"
+
+        val request = Request.Builder().url(url).build()
+
+        Thread {
+            try {
+                val response = httpClient.newCall(request).execute()
+                if (!response.isSuccessful) {
+                    val msg = "HTTP ${response.code}"
+                    mainHandler.post { onError(msg) }
+                    return@Thread
+                }
+
+                val body = response.body?.string().orEmpty()
+                val json = JSONObject(body)
+
+                val retCode = json.optInt("retCode", -1)
+                if (retCode != 0) {
+                    val msg = json.optString("retMsg", "Unknown error")
+                    mainHandler.post { onError("Bybit: $msg") }
+                    return@Thread
+                }
+
+                val list = json.getJSONObject("result").getJSONArray("list")
+                if (list.length() == 0) {
+                    mainHandler.post { onError("No instrument info for $symbol") }
+                    return@Thread
+                }
+
+                val item = list.getJSONObject(0)
+                val lot = item.getJSONObject("lotSizeFilter")
+
+                fun d(opt: String): Double? =
+                    lot.optString(opt, "").takeIf { it.isNotBlank() }?.toDoubleOrNull()
+
+                val lotSize = LotSize(
+                    minOrderQty = d("minOrderQty") ?: 0.0,
+                    qtyStep = d("qtyStep") ?: 0.0,
+                    maxOrderQty = d("maxOrderQty"),
+                    maxMktOrderQty = d("maxMktOrderQty"),
+                    minNotionalValue = d("minNotionalValue")
+                )
+
+                // basic sanity
+                if (lotSize.minOrderQty <= 0.0 || lotSize.qtyStep <= 0.0) {
+                    mainHandler.post { onError("Invalid lot size data for $symbol") }
+                    return@Thread
+                }
+
+                lotSizeCache[symbol] = lotSize
+                mainHandler.post { onSuccess(lotSize) }
+
+            } catch (e: Exception) {
+                mainHandler.post { onError(e.message ?: "Exception") }
+            }
+        }.start()
+    }
+
+    fun adjustQtyToLotSize(rawQty: Double, lot: LotSize): String? {
+        if (rawQty <= 0.0) return null
+
+        val step = lot.qtyStep
+        val min = lot.minOrderQty
+
+        val steps = kotlin.math.floor(rawQty / step + 1e-9)
+        val normalized = steps * step
+
+        if (normalized < min) return null
+
+        // format decimals based on step (0.001 -> 3, 0.01 -> 2, etc.)
+        val decimals = step.toBigDecimal().stripTrailingZeros().scale().coerceAtLeast(0)
+        return String.format(Locale.US, "%.${decimals}f", normalized)
+    }
+
 }
