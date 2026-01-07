@@ -14,43 +14,54 @@ object NavigationHelper {
         bottomNav: BottomNavigationView,
         viewPager: ViewPager2
     ) {
-        val adapter = MainPageAdapter(fragmentActivity.supportFragmentManager, fragmentActivity.lifecycle)
+        val adapter = MainPageAdapter(
+            fragmentActivity.supportFragmentManager,
+            fragmentActivity.lifecycle
+        )
         viewPager.adapter = adapter
+
+        // keep pages alive (optional but helps)
+        viewPager.offscreenPageLimit = 3
 
         bottomNav.setOnItemSelectedListener { item ->
 
-            // ✅ close Split overlay if it's open
+            // Close Split overlay if open
             fragmentActivity.supportFragmentManager.findFragmentByTag("SPLIT")?.let { split ->
                 fragmentActivity.supportFragmentManager.beginTransaction()
                     .remove(split)
-                    .commit()
+                    .commitNow() // IMPORTANT: remove immediately to avoid 1-frame weirdness
+
                 fragmentActivity.findViewById<View>(R.id.fragmentContainer).visibility = View.GONE
             }
 
             val position = when (item.itemId) {
-                R.id.nav_home -> 0
-                R.id.nav_trade -> 3
+                R.id.nav_home  -> 0
+                R.id.nav_trade -> 1
                 R.id.nav_chart -> 2
                 else -> 0
             }
-            viewPager.currentItem = position
+
+            viewPager.setCurrentItem(position, false) // IMPORTANT: no smooth scroll
             true
         }
 
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
-                super.onPageSelected(position)
-
                 val itemId = when (position) {
                     0 -> R.id.nav_home
-                    3 -> R.id.nav_trade
+                    1 -> R.id.nav_trade
                     2 -> R.id.nav_chart
                     else -> R.id.nav_home
                 }
-                bottomNav.selectedItemId = itemId
+                if (bottomNav.selectedItemId != itemId) {
+                    bottomNav.selectedItemId = itemId
+                }
+
+                // disable swipe only on chart if you want
                 viewPager.isUserInputEnabled = position != 2
             }
         })
     }
 }
+
 

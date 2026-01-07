@@ -61,13 +61,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun openSplitForSymbol(symbol: String) {
-
-        // show overlay container
-        findViewById<View>(R.id.fragmentContainer).visibility = View.VISIBLE
+        val container = findViewById<View>(R.id.fragmentContainer)
+        container.visibility = View.VISIBLE
+        container.bringToFront()
 
         val fragment = SplitFragment.newInstance(symbol)
 
         supportFragmentManager.beginTransaction()
+            .setReorderingAllowed(true)
             .replace(R.id.fragmentContainer, fragment, "SPLIT")
             .commit()
     }
