@@ -4,7 +4,7 @@ import bybit.sdk.rest.APIResponseV5
 import bybit.sdk.shared.Category
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
-import lombok.Builder
+
 
 
 suspend fun ByBitMarketClient.getKLine(
@@ -24,7 +24,7 @@ suspend fun ByBitMarketClient.getKLine(
         params.limit?.let { parameters["limit"] = it.toString() }
     })
 
-@Builder
+
 data class KLineParams(
     val category: Category? = null,
     val symbol: String,

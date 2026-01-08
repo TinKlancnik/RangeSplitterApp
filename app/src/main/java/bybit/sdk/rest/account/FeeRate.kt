@@ -4,7 +4,6 @@ import bybit.sdk.rest.APIResponseV5
 import bybit.sdk.shared.Category
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
-import lombok.Builder
 
 suspend fun ByBitAccountClient.getFeeRate(
     params: FeeRateParams
@@ -20,7 +19,6 @@ suspend fun ByBitAccountClient.getFeeRate(
         params.baseCoin?.let { parameters["baseCoin"] = it }
     }, HttpMethod.Get, false)
 
-@Builder
 data class FeeRateParams(
     val category: Category,
     val symbol: String? = null,

@@ -3,7 +3,7 @@ package bybit.sdk.rest.market
 import bybit.sdk.rest.APIResponseV5
 import bybit.sdk.shared.Category
 import bybit.sdk.shared.Side
-import lombok.Builder
+
 import io.ktor.http.*
 import io.ktor.util.*
 import kotlinx.serialization.Serializable
@@ -27,7 +27,7 @@ suspend fun ByBitMarketClient.getPublicTradingHistory(
         params.limit?.let { parameters["limit"] = it.toString() }
     })
 
-@Builder
+
 data class PublicTradingHistoryParams(
     val category: Category,
     val symbol: String? = null,

@@ -17,6 +17,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var name: TextView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -26,6 +27,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         viewPager = view.findViewById(R.id.viewPager)
         tabLayout = view.findViewById(R.id.tabLayout)
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout)
+        name = view.findViewById(R.id.userName)
+
+        name.setOnClickListener {
+            (requireActivity() as MainActivity).openSettings()
+        }
 
         TradeUtils.fetchBalance { balance ->
             balanceTextView.text = "$balance USD"
@@ -42,7 +48,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             totalValueChange.setTextColor(requireContext().getColor(colorRes))
         }
 
-        val adapter = ViewPagerAdapter(this)   // ⬅️ changed from requireActivity()
+        val adapter = ViewPagerAdapter(this)
         viewPager.adapter = adapter
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
@@ -53,10 +59,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }.attach()
 
-        // Pull-to-refresh behavior
         swipeRefreshLayout.setOnRefreshListener {
             val currentItem = viewPager.currentItem
-            val tag = "f$currentItem"  // default tag pattern used by FragmentStateAdapter
+            val tag = "f$currentItem"
 
             val currentFragment = childFragmentManager.findFragmentByTag(tag)
 

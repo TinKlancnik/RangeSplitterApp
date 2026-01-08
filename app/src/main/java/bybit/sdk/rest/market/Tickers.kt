@@ -4,7 +4,7 @@ import bybit.sdk.rest.APIResponseV5
 import bybit.sdk.shared.Category
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
-import lombok.Builder
+
 
 
 suspend fun ByBitMarketClient.getTickers(
@@ -22,7 +22,7 @@ suspend fun ByBitMarketClient.getTickers(
         params.expDate?.let { parameters["expDate"] = it.toString() }
     })
 
-@Builder
+
 data class TickersParams(
     val category: Category,
     val symbol: String,

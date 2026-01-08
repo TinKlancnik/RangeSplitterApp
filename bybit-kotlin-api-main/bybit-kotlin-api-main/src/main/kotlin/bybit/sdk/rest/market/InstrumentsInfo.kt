@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonObject
-import lombok.Builder
+
 import java.util.*
 
 
@@ -34,7 +34,7 @@ suspend fun ByBitMarketClient.getInstrumentsInfo(
         parameters["status"] = "Trading"
     })
 
-@Builder
+
 data class InstrumentsInfoParams(
     val category: Category,
     // status?

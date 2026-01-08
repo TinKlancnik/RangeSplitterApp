@@ -3,7 +3,7 @@ package bybit.sdk.rest.user
 import bybit.sdk.rest.APIResponseV5
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
-import lombok.Builder
+
 
 suspend fun ByBitUserClient.modifySubKey(
     params: ModifySubKeyParams
@@ -22,7 +22,7 @@ suspend fun ByBitUserClient.modifySubKey(
 
         }, HttpMethod.Post, false)
 
-@Builder
+
 data class ModifySubKeyParams(
     val readOnly: Int?,
     val ips: List<String>? = null,

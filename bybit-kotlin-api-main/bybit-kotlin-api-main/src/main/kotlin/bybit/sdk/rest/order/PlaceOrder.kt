@@ -5,7 +5,7 @@ import bybit.sdk.shared.Category
 import bybit.sdk.shared.OrderType
 import bybit.sdk.shared.Side
 import bybit.sdk.shared.TimeInForce
-import lombok.Builder
+
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
 
@@ -31,7 +31,7 @@ suspend fun ByBitOrderClient.placeOrder(
     }, HttpMethod.Post, false)
 
 
-@Builder
+
 data class PlaceOrderParams(
     val category: Category,
     val symbol: String,

@@ -2,7 +2,7 @@ package bybit.sdk.rest.order
 
 import bybit.sdk.rest.APIResponseV5
 import bybit.sdk.shared.Category
-import lombok.Builder
+
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
 
@@ -23,7 +23,7 @@ suspend fun ByBitOrderClient.cancelOrder(
     }, HttpMethod.Post, false)
 
 
-@Builder
+
 data class CancelOrderParams(
     val category: Category,
     val symbol: String,

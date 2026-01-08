@@ -4,7 +4,6 @@ import bybit.sdk.rest.APIResponseV5
 import bybit.sdk.shared.AccountType
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
-import lombok.Builder
 
 suspend fun ByBitAssetClient.createUniversalTransfer(
     params: CreateUniversalTransferParams
@@ -29,7 +28,6 @@ suspend fun ByBitAssetClient.createUniversalTransfer(
 
     }, HttpMethod.Post, false)
 
-@Builder
 data class CreateUniversalTransferParams(
     val transferId: String, // "be7a2462-1138-4e27-80b1-62653f24925e",
     val coin: String, // "ETH"

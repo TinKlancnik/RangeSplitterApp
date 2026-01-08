@@ -106,7 +106,7 @@ object TradeUtils {
         client.orderClient.ordersOpen(params, object : ByBitRestApiCallback<OrdersOpenResponse> {
             override fun onSuccess(result: OrdersOpenResponse) {
                 val openOrders = result.result.list
-                    .filter { it.orderType != OrderType.Market }   // <--- add this
+                    .filter { it.orderType != OrderType.Market }
                     .map {
                         OpenOrder(
                             symbol = it.symbol,

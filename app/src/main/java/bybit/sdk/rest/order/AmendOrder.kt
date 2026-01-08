@@ -4,7 +4,6 @@ import bybit.sdk.rest.APIResponseV5
 import bybit.sdk.shared.Category
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
-import lombok.Builder
 
 
 // this doesn't work for spot!
@@ -26,7 +25,6 @@ suspend fun ByBitOrderClient.amendOrder(
     }, HttpMethod.Post, false)
 
 
-@Builder
 data class AmendOrderParams(
     val category: Category,
     val symbol: String,

@@ -2,7 +2,6 @@ package bybit.sdk.rest.account
 
 import bybit.sdk.rest.APIResponseV5
 import bybit.sdk.shared.AccountType
-import lombok.Builder
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
 
@@ -19,7 +18,6 @@ suspend fun ByBitAccountClient.getWalletBalance(
         params.symbol?.let { parameters["symbol"] = it.joinToString(",") }
     }, HttpMethod.Get, false)
 
-@Builder
 data class WalletBalanceParams(
     val accountType: AccountType,
     val symbol: List<String>? = null,

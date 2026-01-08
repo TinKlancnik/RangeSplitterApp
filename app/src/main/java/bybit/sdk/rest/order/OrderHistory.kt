@@ -3,7 +3,7 @@ package bybit.sdk.rest.order
 import bybit.sdk.rest.APIResponseV5Paginatable
 import bybit.sdk.rest.ListResult
 import bybit.sdk.shared.Category
-import lombok.Builder
+
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
 
@@ -24,7 +24,7 @@ suspend fun ByBitOrderClient.orderHistory(
     }, HttpMethod.Get, false)
 
 
-@Builder
+
 data class OrderHistoryParams(
     val category: Category,
     val symbol: String?,

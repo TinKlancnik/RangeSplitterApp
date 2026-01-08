@@ -6,7 +6,7 @@ import bybit.sdk.shared.PositionStatus
 import bybit.sdk.shared.Side
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
-import lombok.Builder
+
 
 suspend fun ByBitPositionClient.getPositionInfo(
     params: PositionInfoParams
@@ -22,7 +22,7 @@ suspend fun ByBitPositionClient.getPositionInfo(
         params.settleCoin?.let { parameters["settleCoin"] = it }
     }, HttpMethod.Get, false)
 
-@Builder
+
 data class PositionInfoParams(
     val category: Category,
     val symbol: String? = null,

@@ -8,7 +8,7 @@ import bybit.sdk.shared.OrderType
 import bybit.sdk.shared.Side
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
-import lombok.Builder
+
 
 
 suspend fun ByBitPositionClient.closedPnLs(
@@ -28,7 +28,7 @@ suspend fun ByBitPositionClient.closedPnLs(
     }, HttpMethod.Get, false)
 
 
-@Builder
+
 data class ClosedPnLParams(
     val category: Category,
     val symbol: String? = "",

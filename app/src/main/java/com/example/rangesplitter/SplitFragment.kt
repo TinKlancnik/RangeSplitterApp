@@ -43,10 +43,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
     }
 
     private lateinit var symbol: String
-
     private lateinit var coinPriceTextView: TextView
     private lateinit var coinNameTextView: TextView
-
     private var totalBalance = ""
     private var stopLoss: String? = null
     private var takeProfit: String? = null
@@ -81,7 +79,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
         val buttonMarketSell = view.findViewById<Button>(R.id.buttonMarketSell)
         val backButton = view.findViewById<ImageView>(R.id.backButton)
 
-        val items = arrayOf(3, 5)
+        val items = arrayOf(2, 3, 5, 7, 10)
         val spinnerAdapter = android.widget.ArrayAdapter(
             requireContext(),
             R.layout.spinner_item,
@@ -104,7 +102,10 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             useTestnet = true, // change to false for mainnet
             onSuccess = { lot ->
                 lotSize = lot
-                Log.d("LotSize", "Loaded $symbol lot size: min=${lot.minOrderQty}, step=${lot.qtyStep}")
+                Log.d(
+                    "LotSize",
+                    "Loaded $symbol lot size: min=${lot.minOrderQty}, step=${lot.qtyStep}"
+                )
             },
             onError = { msg ->
                 lotSize = null
@@ -136,7 +137,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
             val lot = lotSize
             if (lot == null) {
-                Toast.makeText(requireContext(), "Lot size not loaded yet", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Lot size not loaded yet", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
 
@@ -179,7 +181,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
             val lot = lotSize
             if (lot == null) {
-                Toast.makeText(requireContext(), "Lot size not loaded yet", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Lot size not loaded yet", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
 
@@ -219,7 +222,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
             val lot = lotSize
             if (lot == null) {
-                Toast.makeText(requireContext(), "Lot size not loaded yet", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Lot size not loaded yet", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
 
@@ -237,7 +241,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             val positionSizeCoins = if (riskPerCoin > 0f) (riskUsd / riskPerCoin) else 0f
 
             val qtyStr = TradeUtils.adjustQtyToLotSize(positionSizeCoins.toDouble(), lot) ?: run {
-                Toast.makeText(requireContext(), "Qty too small for $symbol", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Qty too small for $symbol", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
 
@@ -256,7 +261,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
             val lot = lotSize
             if (lot == null) {
-                Toast.makeText(requireContext(), "Lot size not loaded yet", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Lot size not loaded yet", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
 
@@ -274,7 +280,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             val positionSizeCoins = if (riskPerCoin > 0f) (riskUsd / riskPerCoin) else 0f
 
             val qtyStr = TradeUtils.adjustQtyToLotSize(positionSizeCoins.toDouble(), lot) ?: run {
-                Toast.makeText(requireContext(), "Qty too small for $symbol", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Qty too small for $symbol", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
 

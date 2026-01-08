@@ -9,7 +9,7 @@ import bybit.sdk.shared.Side
 import bybit.sdk.shared.TimeInForce
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
-import lombok.Builder
+
 
 
 suspend fun ByBitOrderClient.ordersOpen(
@@ -33,7 +33,7 @@ suspend fun ByBitOrderClient.ordersOpen(
     }, HttpMethod.Get, false)
 
 
-@Builder
+
 data class OrdersOpenParams(
     val category: Category,
     val symbol: String? = null,

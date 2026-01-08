@@ -6,7 +6,7 @@ import bybit.sdk.shared.Category
 import bybit.sdk.shared.IntervalTime
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
-import lombok.Builder
+
 
 
 suspend fun ByBitMarketClient.getOpenInterest(
@@ -26,7 +26,7 @@ suspend fun ByBitMarketClient.getOpenInterest(
         params.limit?.let { parameters["limit"] = it.toString() }
     })
 
-@Builder
+
 data class OpenInterestParams(
     val category: Category,
     val symbol: String,

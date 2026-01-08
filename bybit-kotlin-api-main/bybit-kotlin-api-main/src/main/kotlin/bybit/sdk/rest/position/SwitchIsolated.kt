@@ -3,7 +3,7 @@ package bybit.sdk.rest.position
 import bybit.sdk.rest.APIResponseV5
 import bybit.sdk.shared.Category
 import bybit.sdk.shared.TradeMode
-import lombok.Builder
+
 import io.ktor.http.*
 
 
@@ -23,7 +23,7 @@ suspend fun ByBitPositionClient.switchIsolated(
         params.sellLeverage.let { parameters["sellLeverage"] = it }
     }, HttpMethod.Post, false)
 
-@Builder
+
 data class SwitchIsolatedParams(
     val category: Category,
     val symbol: String,

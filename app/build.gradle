@@ -85,10 +85,6 @@ dependencies {
     implementation "io.github.resilience4j:resilience4j-kotlin:2.2.0"
     implementation("io.github.resilience4j:resilience4j-all:2.2.0")
 
-    // Lombok dependency
-    implementation 'org.projectlombok:lombok:1.18.24'
-    annotationProcessor 'org.projectlombok:lombok:1.18.24'
-
     //tradinview
     implementation project(":lightweightcharts")
 

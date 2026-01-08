@@ -77,7 +77,6 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
     private var lastCandles: List<Candle> = emptyList()
 
     private enum class ActiveIndicator { NONE, MACRO, EMA, MA, BB, DON, RECENT_HL }
-
     private var activeIndicator: ActiveIndicator = ActiveIndicator.NONE
 
     private var currentSymbol: String = "BTCUSDT"
@@ -86,28 +85,36 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
     private var isIndicatorPanelOpen: Boolean = false
 
     private val timeFrameMap = mapOf(
-        R.id.btn1m  to "1",
-        R.id.btn5m  to "5",
+        R.id.btn1m to "1",
+        R.id.btn5m to "5",
         R.id.btn15m to "15",
-        R.id.btn1h  to "60",
-        R.id.btn4h  to "240",
-        R.id.btnD   to "D",
+        R.id.btn1h to "60",
+        R.id.btn4h to "240",
+        R.id.btnD to "D",
     )
 
     // --- WebSocket helper (Streaming Implementation) ---
     private val klineWebSocket = BybitKlineWebSocket()
 
+    // --- Header refs ---
+    private lateinit var pairName: TextView
+    private lateinit var currentPrice: TextView
+    private lateinit var priceChange: TextView
+    private lateinit var highValue: TextView
+    private lateinit var lowValue: TextView
+    private lateinit var volumeValue: TextView
+    private lateinit var mcapValue: TextView
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val pairName: TextView = view.findViewById(R.id.pairName)
-        val assetSubtitle: TextView = view.findViewById(R.id.assetSubtitle)
-        val currentPrice: TextView = view.findViewById(R.id.currentPrice)
-        val priceChange: TextView = view.findViewById(R.id.priceChange)
-        val highValue: TextView = view.findViewById(R.id.highValue)
-        val lowValue: TextView = view.findViewById(R.id.lowValue)
-        val volumeValue: TextView = view.findViewById(R.id.volumeValue)
-        val mcapValue: TextView = view.findViewById(R.id.mcapValue)
+        pairName = view.findViewById(R.id.pairName)
+        currentPrice = view.findViewById(R.id.currentPrice)
+        priceChange = view.findViewById(R.id.priceChange)
+        highValue = view.findViewById(R.id.highValue)
+        lowValue = view.findViewById(R.id.lowValue)
+        volumeValue = view.findViewById(R.id.volumeValue)
+        mcapValue = view.findViewById(R.id.mcapValue)
 
         // indicator tiles (cards)
         val macroTile: View = view.findViewById(R.id.btnMacro)
@@ -127,8 +134,7 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
 
         expandIcon.setOnClickListener {
             isIndicatorPanelOpen = !isIndicatorPanelOpen
-            indicatorsGrid.visibility =
-                if (isIndicatorPanelOpen) View.VISIBLE else View.GONE
+            indicatorsGrid.visibility = if (isIndicatorPanelOpen) View.VISIBLE else View.GONE
             expandIcon.setImageResource(
                 if (isIndicatorPanelOpen) android.R.drawable.arrow_down_float
                 else android.R.drawable.arrow_down_float
@@ -160,44 +166,76 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         donTile?.setOnClickListener { toggleIndicator(ActiveIndicator.DON) }
         recentHlTile?.setOnClickListener { toggleIndicator(ActiveIndicator.RECENT_HL) }
 
-        // ---------- COIN SELECT BOTTOM SHEET ----------
+        // COIN SELECT BOTTOM SHEET (only on click)
         pairName.setOnClickListener {
             CoinSelectBottomSheet { coin ->
-
-                pairName.text = coin.symbol
-
-                val base = coin.symbol.takeWhile { it.isLetter() }
-                assetSubtitle.text = base
-
-                currentPrice.text = coin.priceText
-
-                priceChange.text = coin.changeText
-                val ctx = requireContext()
-                val color =
-                    if (coin.changeValue >= 0) R.color.vibrant_green else R.color.vibrant_red
-                priceChange.setTextColor(ctx.getColor(color))
-
-                highValue.text = String.format("$%,.2f", coin.high24h)
-                lowValue.text = String.format("$%,.2f", coin.low24h)
-
-                val volumeFormatted = TradeUtils.formatCompactNumber(coin.turnover24h)
-                volumeValue.text = volumeFormatted
-
-                mcapValue.text = String.format("%.4f%%", coin.fundingRate * 100)
-                val ctxF = requireContext()
-                val colorF =
-                    if (coin.fundingRate >= 0) R.color.vibrant_green else R.color.vibrant_red
-                mcapValue.setTextColor(ctxF.getColor(colorF))
-
-                currentSymbol = coin.symbol
-                loadChartData()
+                onCoinSelected(coin)
             }.show(parentFragmentManager, "coinSheet")
         }
+
+        // ✅ Load BTC header + BTC chart immediately on enter
+        loadDefaultBTC()
     }
 
     private fun toggleIndicator(type: ActiveIndicator) {
         activeIndicator = if (activeIndicator == type) ActiveIndicator.NONE else type
         updateIndicators()
+    }
+
+    // --- Reused "click handler" logic ---
+    private fun onCoinSelected(coin: Coin) {
+        pairName.text = coin.symbol
+        currentPrice.text = coin.priceText
+
+        priceChange.text = coin.changeText
+        val ctx = requireContext()
+        val color = if (coin.changeValue >= 0) R.color.vibrant_green else R.color.vibrant_red
+        priceChange.setTextColor(ctx.getColor(color))
+
+        highValue.text = String.format("$%,.2f", coin.high24h)
+        lowValue.text = String.format("$%,.2f", coin.low24h)
+
+        volumeValue.text = TradeUtils.formatCompactNumber(coin.turnover24h)
+
+        mcapValue.text = String.format("%.4f%%", coin.fundingRate * 100)
+        val colorF = if (coin.fundingRate >= 0) R.color.vibrant_green else R.color.vibrant_red
+        mcapValue.setTextColor(ctx.getColor(colorF))
+
+        currentSymbol = coin.symbol
+        loadChartData()
+    }
+
+    // ✅ Fetch BTC once and apply same UI logic as a click
+    private fun loadDefaultBTC() {
+        // Optional: show something immediately while loading
+        pairName.text = "BTCUSDT"
+
+        TradeUtils.fetchTopCoinsWithPrices(
+            sortMode = SortMode.VOLUME,
+            limit = 50,
+            onSuccess = { coins ->
+                if (!isAdded) return@fetchTopCoinsWithPrices
+
+                val btc = coins.firstOrNull { it.symbol.equals("BTCUSDT", true) }
+                if (btc != null) {
+                    activity?.runOnUiThread { onCoinSelected(btc) }
+                } else {
+                    // fallback: at least load candles
+                    activity?.runOnUiThread {
+                        currentSymbol = "BTCUSDT"
+                        loadChartData()
+                    }
+                }
+            },
+            onError = {
+                // fallback: at least load candles
+                if (!isAdded) return@fetchTopCoinsWithPrices
+                activity?.runOnUiThread {
+                    currentSymbol = "BTCUSDT"
+                    loadChartData()
+                }
+            }
+        )
     }
 
     // ----------------- Chart setup -----------------
@@ -358,8 +396,8 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                             }
                         }
 
-                        // initial load AFTER everything is wired
-                        loadChartData()
+                        // NOTE: we do NOT call loadChartData() here anymore,
+                        // because loadDefaultBTC() in onViewCreated triggers it.
                     }
                 }
             }
@@ -394,6 +432,9 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                     Log.d("ChartFragment", "Loaded ${lastCandles.size} candles")
                     updateIndicators()
 
+                    // ✅ Avoid multiple subscriptions
+                    klineWebSocket.disconnect()
+
                     // --- Streaming Implementation (subscribe) ---
                     klineWebSocket.subscribe(
                         symbol = symbol,
@@ -422,15 +463,8 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         val current = lastCandles
         val last = current.last()
 
-        Log.d(
-            "RT_BAR",
-            "Incoming bar time=${bar.time}, last.time=${last.time}, " +
-                    "open=${bar.open}, high=${bar.high}, low=${bar.low}, close=${bar.close}"
-        )
-
         val updatedList: List<Candle> = when {
             bar.time == last.time -> {
-                Log.d("RT_BAR", "Updating last candle")
                 current.dropLast(1) + Candle(
                     time = bar.time,
                     open = bar.open,
@@ -440,7 +474,6 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                 )
             }
             bar.time > last.time -> {
-                Log.d("RT_BAR", "Appending new candle")
                 current + Candle(
                     time = bar.time,
                     open = bar.open,
@@ -449,17 +482,14 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
                     close = bar.close
                 )
             }
-            else -> {
-                Log.d("RT_BAR", "Old candle, ignoring")
-                return
-            }
+            else -> return
         }
 
         lastCandles = updatedList
 
         val listForChart = updatedList.map {
             CandlestickData(
-                time = Time.Utc(it.time),  // it.time is SECONDS
+                time = Time.Utc(it.time), // it.time is SECONDS
                 open = it.open,
                 high = it.high,
                 low = it.low,
@@ -468,12 +498,10 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         }
 
         activity?.runOnUiThread {
-            Log.d("RT_BAR", "Pushing ${listForChart.size} candles to chart")
             candlestickSeries?.setData(listForChart)
             updateIndicators()
         }
     }
-
 
     // ----------------- Indicator logic -----------------
 
@@ -483,9 +511,7 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
         clearAllIndicators()
 
         when (activeIndicator) {
-            ActiveIndicator.NONE -> {
-                // nothing
-            }
+            ActiveIndicator.NONE -> Unit
             ActiveIndicator.MACRO -> macroIndicator?.render(lastCandles, true)
             ActiveIndicator.EMA -> ema12Indicator?.render(lastCandles)
             ActiveIndicator.MA -> maIndicator?.render(lastCandles)
@@ -506,7 +532,6 @@ class ChartFragment : Fragment(R.layout.fragment_chart) {
 
         bbIndicator?.clear()
         donIndicator?.clear()
-
         recentHLIndicator?.clear()
     }
 
