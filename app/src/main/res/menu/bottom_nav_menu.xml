@@ -11,4 +11,8 @@
         android:id="@+id/nav_chart"
         android:icon="@drawable/chart"
         android:title="Chart" />
+    <item
+        android:id="@+id/nav_journal"
+        android:icon="@drawable/diary"
+        android:title="Journal" />
 </menu>

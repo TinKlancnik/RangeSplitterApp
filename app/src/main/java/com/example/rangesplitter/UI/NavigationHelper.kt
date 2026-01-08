@@ -27,6 +27,7 @@ object NavigationHelper {
                 R.id.nav_home -> 0
                 R.id.nav_trade -> 3
                 R.id.nav_chart -> 2
+                R.id.nav_journal -> 4
                 else -> 0
             }
             viewPager.setCurrentItem(position, false)
@@ -41,6 +42,7 @@ object NavigationHelper {
                     0 -> R.id.nav_home
                     3 -> R.id.nav_trade
                     2 -> R.id.nav_chart
+                    4 -> R.id.nav_journal
                     else -> R.id.nav_home
                 }
                 bottomNav.selectedItemId = itemId
