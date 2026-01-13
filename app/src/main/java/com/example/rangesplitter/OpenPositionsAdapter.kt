@@ -22,8 +22,7 @@ class OpenPositionsAdapter(
         private val avgPriceTextView: TextView = itemView.findViewById(R.id.avgPrice)
         private val positionValueTextView: TextView = itemView.findViewById(R.id.leverage)
         private val unrealizedPnlTextView: TextView = itemView.findViewById(R.id.unrealizedPnl)
-
-        private val btnSaveToJournal: Button = itemView.findViewById(R.id.btnSaveToJournal)
+        private val btnSaveToJournal: Button = itemView.findViewById(R.id.journalButton)
 
 
         fun bind(openPosition: OpenPosition) {
@@ -54,7 +53,6 @@ class OpenPositionsAdapter(
                     openPosition.side.equals("Sell", true) || openPosition.side.equals("Short", true) -> "SHORT"
                     else -> openPosition.side.uppercase()
                 }
-
 
                 val data = hashMapOf(
                     "symbol" to openPosition.symbol,

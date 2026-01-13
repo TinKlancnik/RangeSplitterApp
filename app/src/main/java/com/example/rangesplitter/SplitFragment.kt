@@ -27,6 +27,11 @@ import com.example.rangesplitter.ws.BybitLinearTickerWebSocket.TickerUpdate
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.util.Locale
 import kotlin.math.abs
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import java.util.UUID
 
 class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
@@ -125,6 +130,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
         // ---------------- LIMIT BUY ----------------
         buyButton.setOnClickListener { btn ->
+            val batchOrderLinkId = newTradeBatchLinkId()
             val riskStr = view.findViewById<TextView>(R.id.risk).text.toString()
             val risk = riskStr.toFloatOrNull() ?: 0f
 
@@ -154,7 +160,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
                 for ((price, amount) in positionData) {
                     val qtyStr = TradeUtils.adjustQtyToLotSize(amount.toDouble(), lot) ?: continue
-                    placeATrade(price.toString(), qtyStr, Side.Buy)
+                    placeATrade(price.toString(), qtyStr, Side.Buy, batchOrderLinkId)
                 }
 
                 closeKeyboard(btn)
@@ -169,6 +175,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
         // ---------------- LIMIT SELL ----------------
         sellButton.setOnClickListener { btn ->
+            val batchOrderLinkId = newTradeBatchLinkId()
             val riskStr = view.findViewById<TextView>(R.id.risk).text.toString()
             val risk = riskStr.toFloatOrNull() ?: 0f
 
@@ -198,7 +205,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
                 for ((price, amount) in positionData) {
                     val qtyStr = TradeUtils.adjustQtyToLotSize(amount.toDouble(), lot) ?: continue
-                    placeATrade(price.toString(), qtyStr, Side.Sell)
+                    placeATrade(price.toString(), qtyStr, Side.Sell, batchOrderLinkId)
                 }
 
                 closeKeyboard(btn)
@@ -246,7 +253,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
                 return@setOnClickListener
             }
 
-            placeMarketTrade(qtyStr, Side.Buy)
+            val batchOrderLinkId = newTradeBatchLinkId()
+            placeMarketTrade(qtyStr, Side.Buy, batchOrderLinkId)
             closeKeyboard(btn)
         }
 
@@ -285,7 +293,9 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
                 return@setOnClickListener
             }
 
-            placeMarketTrade(qtyStr, Side.Sell)
+            val batchOrderLinkId = newTradeBatchLinkId()
+            placeMarketTrade(qtyStr, Side.Sell, batchOrderLinkId)
+
             closeKeyboard(btn)
         }
     }
@@ -388,7 +398,12 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
         imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
-    private fun placeATrade(price: String, amount: String, side: Side) {
+    private fun placeATrade(
+        price: String,
+        amount: String,
+        side: Side,
+        orderLinkId: String
+    ) {
         val bybitClient = BybitClientManager.client
 
         val tradeParams = PlaceOrderParams(
@@ -401,12 +416,30 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             stopLoss = stopLoss,
             takeProfit = takeProfit,
             timeInForce = TimeInForce.GTC,
-            reduceOnly = false
+            reduceOnly = false,
+            orderLinkId = orderLinkId // ✅ SAME for all DCA orders
         )
 
         val callback = object : ByBitRestApiCallback<PlaceOrderResponse> {
+
             override fun onSuccess(result: PlaceOrderResponse) {
-                Log.d("Trade", "Trade placed successfully: $result")
+                val placedOrderId = result.result.orderId
+                val returnedOrderLinkId = result.result.orderLinkId
+
+                Log.d(
+                    "Trade",
+                    "Order placed. orderId=$placedOrderId orderLinkId=$returnedOrderLinkId"
+                )
+
+                // ✅ Save EACH order separately, but grouped by orderLinkId
+                saveTradeToFirestore(
+                    orderId = placedOrderId,
+                    orderLinkId = returnedOrderLinkId,
+                    side = side,
+                    qty = amount,
+                    entryPrice = price
+                )
+
                 showTradeResultDialog(
                     "Success",
                     "Trade placed successfully for $symbol at $price (qty $amount)."
@@ -415,14 +448,23 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
             override fun onError(error: Throwable) {
                 Log.e("Trade", "Error encountered: ${error.message}", error)
-                showTradeResultDialog("Error", "Failed to place trade: ${error.message}")
+                showTradeResultDialog(
+                    "Error",
+                    "Failed to place trade: ${error.message}"
+                )
             }
         }
 
         bybitClient.orderClient.placeOrder(tradeParams, callback)
     }
 
-    private fun placeMarketTrade(amount: String, side: Side) {
+
+
+    private fun placeMarketTrade(
+        amount: String,
+        side: Side,
+        orderLinkId: String
+    ) {
         val bybitClient = BybitClientManager.client
 
         val tradeParams = PlaceOrderParams(
@@ -433,12 +475,23 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             qty = amount,
             stopLoss = stopLoss,
             takeProfit = takeProfit,
-            reduceOnly = false
+            reduceOnly = false,
+            orderLinkId = orderLinkId
         )
 
         val callback = object : ByBitRestApiCallback<PlaceOrderResponse> {
+
             override fun onSuccess(result: PlaceOrderResponse) {
-                Log.d("MarketTrade", "Market order placed successfully: $result")
+                val placedOrderId = result.result.orderId
+
+                saveTradeToFirestore(
+                    orderId = placedOrderId,
+                    orderLinkId = result.result.orderLinkId,
+                    side = side,
+                    qty = amount,
+                    entryPrice = null
+                )
+
                 showTradeResultDialog(
                     "Success",
                     "Market order placed successfully for $symbol (qty $amount)."
@@ -447,12 +500,17 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
             override fun onError(error: Throwable) {
                 Log.e("MarketTrade", "Error encountered: ${error.message}", error)
-                showTradeResultDialog("Error", "Failed to place market order: ${error.message}")
+                showTradeResultDialog(
+                    "Error",
+                    "Failed to place market order: ${error.message}"
+                )
             }
         }
 
         bybitClient.orderClient.placeOrder(tradeParams, callback)
     }
+
+
 
     private fun showTradeResultDialog(title: String, message: String) {
         activity?.runOnUiThread {
@@ -464,8 +522,6 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             dialogBuilder.show()
         }
     }
-
-    // ---------------- WebSocket price listener ----------------
 
     private fun normalizeSymbolForWs(sym: String): String = sym.removeSuffix(".P")
 
@@ -480,4 +536,40 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             }
         }
     }
+
+    private fun saveTradeToFirestore(
+        orderId: String,
+        orderLinkId: String?,
+        side: Side,
+        qty: String,
+        entryPrice: String?
+    ) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val db = FirebaseFirestore.getInstance()
+
+        val doc = db.collection("users")
+            .document(uid)
+            .collection("trades")
+            .document(orderId)
+
+        val data = hashMapOf<String, Any?>(
+            "orderId" to orderId,
+            "orderLinkId" to orderLinkId,
+            "symbol" to symbol,
+            "side" to side.name,
+            "qty" to qty.toDoubleOrNull(),
+            "entryPrice" to entryPrice?.toDoubleOrNull(),
+            "status" to "OPEN",
+            "entryTime" to FieldValue.serverTimestamp(),
+            "updatedAt" to FieldValue.serverTimestamp()
+        )
+
+        doc.set(data, SetOptions.merge())
+    }
+
+    private fun newTradeBatchLinkId(): String {
+        return "dca_${symbol}_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(8)}"
+    }
+
+
 }
