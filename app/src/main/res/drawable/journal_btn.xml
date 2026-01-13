@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true" android:drawable="@drawable/eye_on" />
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/journalButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:text="Journal"
+        style= "@style/Widget.Material3.Button.IconButton" />
+</selector>

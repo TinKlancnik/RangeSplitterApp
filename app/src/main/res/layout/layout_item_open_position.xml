@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:padding="14dp"
     android:gravity="center_vertical"
@@ -148,12 +149,23 @@
             android:layout_weight="1"
             android:orientation="vertical">
 
-            <Button
-                android:id="@+id/btnSaveToJournal"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/journalButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Journal">
-            </Button>
+                android:layout_height="40dp"
+                android:text="Save"
+                android:textAllCaps="false"
+                app:icon="@drawable/diary"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                style="@style/Widget.Material3.Button"
+                android:backgroundTint="@color/buttonDefault"
+                android:textColor="@color/white"
+                app:iconTint="@color/white"
+                app:cornerRadius="20dp"
+                android:checkable="true"
+                android:layout_gravity="end"/>
+
         </LinearLayout>
     </LinearLayout>
 
