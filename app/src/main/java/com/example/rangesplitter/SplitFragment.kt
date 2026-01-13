@@ -431,7 +431,6 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
                     "Order placed. orderId=$placedOrderId orderLinkId=$returnedOrderLinkId"
                 )
 
-                // ✅ Save EACH order separately, but grouped by orderLinkId
                 saveTradeToFirestore(
                     orderId = placedOrderId,
                     orderLinkId = returnedOrderLinkId,
@@ -457,8 +456,6 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
         bybitClient.orderClient.placeOrder(tradeParams, callback)
     }
-
-
 
     private fun placeMarketTrade(
         amount: String,

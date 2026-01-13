@@ -10,14 +10,22 @@ import com.example.rangesplitter.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import androidx.lifecycle.lifecycleScope
+import com.example.rangesplitter.sync.TradeSyncManager
+import com.example.rangesplitter.sync.BybitTradeApiImpl
+
 
 class JournalFragment : Fragment(R.layout.fragment_journal) {
 
+    private lateinit var tradeSyncManager: TradeSyncManager
     private lateinit var adapter: JournalAdapter
     private var listener: ListenerRegistration? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        tradeSyncManager = TradeSyncManager(bybitApi = BybitTradeApiImpl())
+
 
         val recyclerView = view.findViewById<RecyclerView>(R.id.tradesRecyclerView)
 
@@ -33,12 +41,11 @@ class JournalFragment : Fragment(R.layout.fragment_journal) {
             return
         }
 
-        // Real-time updates (recommended)
         listener = FirebaseFirestore.getInstance()
             .collection("users")
             .document(uid)
-            .collection("tradeDrafts")
-            .orderBy("entryTime")
+            .collection("trades")
+            .orderBy("entryTime", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .addSnapshotListener { snap, e ->
                 if (e != null) {
                     Toast.makeText(requireContext(), "Load failed: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -48,7 +55,7 @@ class JournalFragment : Fragment(R.layout.fragment_journal) {
 
                 val trades = snap.documents.map { doc ->
                     JournalTrade(
-                        id = doc.id,
+                        id = doc.getString("orderId") ?: doc.id,
                         symbol = doc.getString("symbol") ?: "",
                         side = doc.getString("side") ?: "",
                         qty = doc.getDouble("qty") ?: 0.0,
@@ -57,12 +64,24 @@ class JournalFragment : Fragment(R.layout.fragment_journal) {
                         pnlPercent = doc.getDouble("pnlPercent"),
                         reason = doc.getString("reason"),
                         entryTime = doc.getTimestamp("entryTime"),
-                        status = doc.getString("status") ?: "DRAFT"
+                        status = doc.getString("status") ?: "OPEN"
                     )
                 }
 
                 adapter.submitList(trades)
             }
+    }
+    override fun onStart() {
+        super.onStart()
+        tradeSyncManager.start(
+            scope = viewLifecycleOwner.lifecycleScope,
+            intervalMs = 30_000L
+        )
+    }
+
+    override fun onStop() {
+        super.onStop()
+        tradeSyncManager.stop()
     }
 
     override fun onDestroyView() {
