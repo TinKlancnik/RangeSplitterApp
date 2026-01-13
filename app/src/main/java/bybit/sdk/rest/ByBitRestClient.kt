@@ -145,7 +145,7 @@ constructor(
         if (!isPublicAPI) {
 
             val timestamp = Instant.now().toEpochMilli()
-            val recvWindow = 4000
+            val recvWindow = 10000
             val key = if (!apiKey.isNullOrBlank()) {
                 apiKey
             } else {

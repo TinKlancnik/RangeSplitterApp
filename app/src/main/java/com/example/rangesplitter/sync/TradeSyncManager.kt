@@ -5,10 +5,25 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+/**
+ * Sync strategy (heuristic):
+ * - Get OPEN trades from Firestore
+ * - Fetch Bybit closed-pnl by symbol in a time window
+ * - Group closed-pnl rows into "close events" (rows within 5 seconds)
+ * - For each event, aggregate pnl + exitPrice, then mark OPEN trades for that symbol as CLOSED
+ *   when trade.entryTime <= eventEndTime.
+ *
+ * This avoids matching by orderId/orderLinkId (since closed-pnl didn't give orderLinkId).
+ */
 class TradeSyncManager(
     private val bybitApi: BybitTradeApi,
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
@@ -24,14 +39,15 @@ class TradeSyncManager(
     fun start(
         scope: CoroutineScope,
         intervalMs: Long = 30_000L,
-        closedPnlLookbackMs: Long = 24 * 60 * 60 * 1000L
+        closedPnlLookbackMs: Long = 24 * 60 * 60 * 1000L,
+        closeEventWindowMs: Long = 5_000L
     ) {
         if (job?.isActive == true) return
 
         job = scope.launch(dispatcher) {
             while (isActive) {
                 try {
-                    syncOpenTrades(closedPnlLookbackMs)
+                    syncOpenTrades(closedPnlLookbackMs, closeEventWindowMs)
                 } catch (t: Throwable) {
                     Log.e(TAG, "sync loop error: ${t.message}", t)
                 }
@@ -45,50 +61,42 @@ class TradeSyncManager(
         job = null
     }
 
-
-    private suspend fun syncOpenTrades(closedPnlLookbackMs: Long) {
+    private suspend fun syncOpenTrades(lookbackMs: Long, windowMs: Long) {
         val uid = auth.currentUser?.uid ?: return
 
         val tradesCol = db.collection("users").document(uid).collection("trades")
 
+        // Keep query simple (no composite index required)
         val snap = tradesCol
             .whereEqualTo("status", "OPEN")
-            .orderBy("entryTime", Query.Direction.DESCENDING)
-            .limit(50)
+            .limit(100)
             .get()
             .await()
 
         if (snap.isEmpty) return
 
-        val trades = snap.documents.map { doc ->
+        val openTrades = snap.documents.mapNotNull { doc ->
+            val symbol = (doc.getString("symbol") ?: "").removeSuffix(".P")
+            val orderId = doc.getString("orderId") ?: doc.id
+            val entryTime = doc.getTimestamp("entryTime")
+            if (symbol.isBlank() || orderId.isBlank() || entryTime == null) return@mapNotNull null
+
             FireTrade(
-                docId = doc.id,
-                orderId = doc.getString("orderId") ?: doc.id,
-                orderLinkId = doc.getString("orderLinkId") ?: "",
-                symbol = doc.getString("symbol") ?: "",
-                side = doc.getString("side") ?: "",
-                qty = doc.getDouble("qty") ?: 0.0,
-                entryPrice = doc.getDouble("entryPrice"),
-                entryTime = doc.getTimestamp("entryTime")
+                orderId = orderId,
+                symbol = symbol,
+                entryTime = entryTime
             )
-        }.filter { it.symbol.isNotBlank() && it.orderId.isNotBlank() }
+        }
 
-        trades.filter { it.entryPrice == null || it.entryPrice == 0.0 }
-            .forEach { trade ->
-                fillEntryPriceFromExecutions(uid, trade)
-            }
+        if (openTrades.isEmpty()) return
+
         val now = System.currentTimeMillis()
-        val start = now - closedPnlLookbackMs
+        val start = now - lookbackMs
 
-        trades.groupBy { it.symbol }.forEach { (symbol, symbolTrades) ->
-            if (symbol.isBlank()) return@forEach
-
+        // group open trades by symbol (fewer API calls)
+        openTrades.groupBy { it.symbol }.forEach { (symbol, symbolTrades) ->
             val closed = try {
-                bybitApi.fetchClosedPnl(
-                    symbol = symbol,
-                    startTimeMs = start,
-                    endTimeMs = now
-                )
+                bybitApi.fetchClosedPnl(symbol, start, now)
             } catch (t: Throwable) {
                 Log.e(TAG, "fetchClosedPnl failed for $symbol: ${t.message}", t)
                 emptyList()
@@ -96,73 +104,124 @@ class TradeSyncManager(
 
             if (closed.isEmpty()) return@forEach
 
-            // index by orderId for fast match
-            val byOrderId = closed.associateBy { it.orderId }
+            // --- DEBUG (optional but useful) ---
+            Log.d(TAG, "ClosedPnL for $symbol -> ${closed.size} items")
+            closed.take(5).forEach { item ->
+                Log.d(
+                    TAG,
+                    "CLOSED: orderId=${item.orderId} created=${msToReadable(item.createdTimeMs)} updated=${msToReadable(item.updatedTimeMs)} exit=${item.avgExitPrice} pnl=${item.closedPnl}"
+                )
+            }
 
-            symbolTrades.forEach { tr ->
-                val closedItem = byOrderId[tr.orderId] ?: return@forEach
-                markTradeClosed(uid, tr.orderId, closedItem)
+            val events = buildCloseEvents(closed, windowMs)
+            if (events.isEmpty()) return@forEach
+
+            // For each close event, close any OPEN trades whose entryTime <= eventEndTime
+            for (event in events) {
+                val eventEndMs = event.maxOfOrNull { it.updatedTimeMs ?: 0L } ?: 0L
+                if (eventEndMs <= 0L) continue
+
+                val eventPnl = event.sumOf { it.closedPnl }
+                val eventExit = weightedExitPrice(event)
+
+                symbolTrades.forEach { tr ->
+                    val entryMs = tr.entryTime.toDate().time
+                    if (entryMs <= eventEndMs) {
+                        markTradeClosed(uid, tr.orderId, eventExit, eventPnl, eventEndMs)
+                    }
+                }
             }
         }
     }
 
-    private suspend fun fillEntryPriceFromExecutions(uid: String, trade: FireTrade) {
-        val avg = try {
-            bybitApi.fetchAvgEntryPriceFromExecutions(
-                orderId = trade.orderId,
-                symbol = trade.symbol
-            )
-        } catch (t: Throwable) {
-            Log.e(TAG, "fetch executions failed orderId=${trade.orderId}: ${t.message}", t)
-            null
+    /**
+     * Group closed-pnl rows into close "events" by updatedTime.
+     * Items within [windowMs] are treated as same event.
+     */
+    private fun buildCloseEvents(items: List<ClosedPnlItem>, windowMs: Long): List<List<ClosedPnlItem>> {
+        val sorted = items
+            .filter { (it.updatedTimeMs ?: 0L) > 0L }
+            .sortedBy { it.updatedTimeMs!! }
+
+        if (sorted.isEmpty()) return emptyList()
+
+        val events = mutableListOf<MutableList<ClosedPnlItem>>()
+        for (item in sorted) {
+            if (events.isEmpty()) {
+                events.add(mutableListOf(item))
+                continue
+            }
+
+            val lastEvent = events.last()
+            val lastTime = lastEvent.last().updatedTimeMs ?: 0L
+            val curTime = item.updatedTimeMs ?: 0L
+
+            if (curTime - lastTime <= windowMs) {
+                lastEvent.add(item)
+            } else {
+                events.add(mutableListOf(item))
+            }
         }
-
-        if (avg == null || avg <= 0.0) return
-
-        val doc = db.collection("users").document(uid).collection("trades").document(trade.orderId)
-        doc.update(
-            mapOf(
-                "entryPrice" to avg,
-                "updatedAt" to FieldValue.serverTimestamp()
-            )
-        ).await()
+        return events
     }
 
-    private suspend fun markTradeClosed(uid: String, orderId: String, closed: ClosedPnlItem) {
+    /**
+     * Weighted exit using closedSize (if available). Falls back to simple average.
+     */
+    private fun weightedExitPrice(event: List<ClosedPnlItem>): Double {
+        val den = event.sumOf { (it.closedSize ?: 0.0).coerceAtLeast(0.0) }
+        if (den > 0.0) {
+            val num = event.sumOf { it.avgExitPrice * (it.closedSize ?: 0.0) }
+            return num / den
+        }
+        return event.map { it.avgExitPrice }.average()
+    }
+
+    private suspend fun markTradeClosed(
+        uid: String,
+        orderId: String,
+        exitPrice: Double,
+        pnl: Double,
+        eventEndMs: Long
+    ) {
         val doc = db.collection("users").document(uid).collection("trades").document(orderId)
 
         val updates = hashMapOf<String, Any?>(
             "status" to "CLOSED",
-            "exitPrice" to closed.avgExitPrice,
-            "pnl" to closed.closedPnl, // you can also store pnlPercent separately
+            "exitPrice" to exitPrice,
+            "pnl" to pnl,
             "closedTime" to FieldValue.serverTimestamp(),
+            "bybitCloseTimeMs" to eventEndMs,
             "updatedAt" to FieldValue.serverTimestamp()
         )
 
         doc.update(updates).await()
-        Log.d(TAG, "Closed orderId=$orderId pnl=${closed.closedPnl} exit=${closed.avgExitPrice}")
+        Log.d(TAG, "Closed Firestore trade orderId=$orderId exit=$exitPrice pnl=$pnl")
     }
 }
 
+/** Minimal Firestore trade shape for this heuristic. */
 private data class FireTrade(
-    val docId: String,
     val orderId: String,
-    val orderLinkId: String,
     val symbol: String,
-    val side: String,
-    val qty: Double,
-    val entryPrice: Double?,
-    val entryTime: Timestamp?
+    val entryTime: Timestamp
 )
 
 interface BybitTradeApi {
-
-    suspend fun fetchAvgEntryPriceFromExecutions(orderId: String, symbol: String): Double?
     suspend fun fetchClosedPnl(symbol: String, startTimeMs: Long, endTimeMs: Long): List<ClosedPnlItem>
 }
 
 data class ClosedPnlItem(
     val orderId: String,
     val closedPnl: Double,
-    val avgExitPrice: Double
+    val avgExitPrice: Double,
+    val createdTimeMs: Long?,
+    val updatedTimeMs: Long?,
+    val closedSize: Double?
 )
+
+private fun msToReadable(ms: Long?): String =
+    ms?.let {
+        java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+            .format(java.util.Date(it))
+    } ?: "null"
