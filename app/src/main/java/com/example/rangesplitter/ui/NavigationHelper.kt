@@ -1,6 +1,5 @@
-package com.example.rangesplitter.UI
+package com.example.rangesplitter.ui
 
-import android.view.View
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.example.rangesplitter.MainActivity

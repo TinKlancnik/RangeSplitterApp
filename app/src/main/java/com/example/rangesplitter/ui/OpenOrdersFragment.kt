@@ -1,4 +1,4 @@
-package com.example.rangesplitter
+package com.example.rangesplitter.ui
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,6 +9,8 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.rangesplitter.R
+import com.example.rangesplitter.RefreshableFragment
 import com.example.rangesplitter.TradeUtils.fetchOpenOrders
 
 class OpenOrdersFragment : Fragment(), RefreshableFragment {

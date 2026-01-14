@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.viewpager2.widget.ViewPager2
-import com.example.rangesplitter.UI.NavigationHelper
+import com.example.rangesplitter.ui.NavigationHelper
 import com.example.rangesplitter.settings.SettingsFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 

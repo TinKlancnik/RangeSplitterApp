@@ -1,9 +1,8 @@
-package com.example.rangesplitter.UI
+package com.example.rangesplitter.ui
 
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.example.rangesplitter.OpenOrdersFragment
-import com.example.rangesplitter.UI.OpenPositionsFragment
+import com.example.rangesplitter.ui.OpenOrdersFragment
 
 class ViewPagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
     override fun getItemCount(): Int = 2

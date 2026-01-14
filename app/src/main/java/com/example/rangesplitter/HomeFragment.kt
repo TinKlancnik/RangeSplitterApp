@@ -6,7 +6,7 @@ import android.view.View
 import android.widget.TextView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.viewpager2.widget.ViewPager2
-import com.example.rangesplitter.UI.ViewPagerAdapter
+import com.example.rangesplitter.ui.ViewPagerAdapter
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 
