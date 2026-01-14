@@ -61,7 +61,7 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
             holder.price.text = priceText
 
             val changeValue = when {
-                ticker?.price24hPcnt != null -> ticker.price24hPcnt * 100.0   // Bybit gives fraction, e.g. 0.0123
+                ticker?.price24hPcnt != null -> ticker.price24hPcnt * 100.0
                 else -> coin.changeValue
             }
 
@@ -82,7 +82,6 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
         override fun getItemCount(): Int = items.size
 
         private fun normalizeSymbolForWs(symbol: String): String {
-            // If your Coin symbols are like "BTCUSDT.P", strip suffix for WebSocket:
             return symbol.removeSuffix(".P")
         }
     }
@@ -112,7 +111,6 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
         recycler = view.findViewById(R.id.recyclerCoins)
         filterGroup = view.findViewById(R.id.filterGroup)
 
-        // RecyclerView setup
         coinAdapter = CoinAdapter(
             visibleCoins,
             tickerMap
@@ -124,13 +122,11 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
         recycler.layoutManager = LinearLayoutManager(requireContext())
         recycler.adapter = coinAdapter
 
-        // 🔧 Disable change animations to remove flicker
         (recycler.itemAnimator as? SimpleItemAnimator)?.apply {
             supportsChangeAnimations = false
             changeDuration = 0L
         }
 
-        // Filter list as user types
         searchInput.addTextChangedListener { text ->
             val query = text?.toString()?.trim()?.lowercase() ?: ""
             visibleCoins.clear()
@@ -146,8 +142,7 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
             coinAdapter.notifyDataSetChanged()
         }
 
-        // ChipGroup: change sort mode
-        filterGroup.check(R.id.chipVolume)   // default selected chip
+        filterGroup.check(R.id.chipVolume)
 
         filterGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             val checkedId = checkedIds.firstOrNull() ?: return@setOnCheckedStateChangeListener
@@ -160,24 +155,19 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
                 else -> SortMode.VOLUME
             }
 
-            // Re-fetch list when sort changes (REST used only occasionally)
             fetchTopCoinsWithPrices(limit = 50)
         }
 
-        // Start listening to WebSocket updates
         BybitLinearTickerWebSocket.addListener(this)
 
-        // Initial load of top coins via REST (one-time snapshot)
         fetchTopCoinsWithPrices(limit = 50)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
 
-        // Stop listening to WebSocket updates from this fragment
         BybitLinearTickerWebSocket.removeListener(this)
 
-        // Unsubscribe from all current symbols (optional but cleaner)
         unsubscribeForCurrentCoins()
     }
 
@@ -190,14 +180,12 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
     // ---------------- REST → INITIAL LIST ----------------
 
     private fun fetchTopCoinsWithPrices(limit: Int = 50) {
-        // Before replacing the list, unsubscribe from old ones
         unsubscribeForCurrentCoins()
 
         TradeUtils.fetchTopCoinsWithPrices(
             sortMode = sortMode,
             limit = limit,
             onSuccess = onSuccess@{ coins ->
-                // Fragment might already be detached when the network call finishes
                 if (!isAdded) return@onSuccess
 
                 allCoins.clear()
@@ -206,16 +194,13 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
                 allCoins.addAll(coins)
                 visibleCoins.addAll(coins)
 
-                // Subscribe WebSocket for new list of coins
                 subscribeForCurrentCoins()
 
                 coinAdapter.notifyDataSetChanged()
             },
             onError = onError@{ msg ->
-                // Fragment might already be detached here too
                 if (!isAdded) return@onError
 
-                // Use safe context access instead of requireContext()
                 context?.let {
                     Toast.makeText(it, msg, Toast.LENGTH_SHORT).show()
                 }
@@ -239,7 +224,6 @@ class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListen
     }
 
     private fun normalizeSymbolForWs(symbol: String): String {
-        // If your `Coin.symbol` is "BTCUSDT.P", map it to "BTCUSDT" for Bybit WS topic
         return symbol.removeSuffix(".P")
     }
 

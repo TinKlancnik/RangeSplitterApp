@@ -458,13 +458,37 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             reduceOnly = false,
             onSuccess = { result ->
                 val placedOrderId = result.result.orderId
+                val returnedOrderLinkId = result.result.orderLinkId
 
-                saveTradeToFirestore(
-                    orderId = placedOrderId,
-                    orderLinkId = result.result.orderLinkId,
-                    side = side,
-                    qty = amount,
-                    entryPrice = null
+                val uiPrice = coinPriceTextView.text
+                    .toString()
+                    .replace(",", "")
+                    .trim()
+
+                TradeUtils.fetchPositionAvgPrice(
+                    symbol = symbol,
+                    onSuccess = { avgPrice ->
+                        val entry = avgPrice
+                            ?.takeIf { it.isNotBlank() && it != "0" }
+                            ?: uiPrice
+
+                        saveTradeToFirestore(
+                            orderId = placedOrderId,
+                            orderLinkId = returnedOrderLinkId,
+                            side = side,
+                            qty = amount,
+                            entryPrice = entry
+                        )
+                    },
+                    onError = {
+                        saveTradeToFirestore(
+                            orderId = placedOrderId,
+                            orderLinkId = returnedOrderLinkId,
+                            side = side,
+                            qty = amount,
+                            entryPrice = uiPrice
+                        )
+                    }
                 )
 
                 showTradeResultDialog(
@@ -473,11 +497,15 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
                 )
             },
             onError = { error ->
-                Log.e("MarketTrade", "Error encountered: ${error.message}", error)
-                showTradeResultDialog("Error", "Failed to place market order: ${error.message}")
+                Log.e("MarketTrade", "Place market order failed: ${error.message}", error)
+                showTradeResultDialog(
+                    "Error",
+                    "Failed to place market order: ${error.message}"
+                )
             }
         )
     }
+
 
 
     private fun showTradeResultDialog(title: String, message: String) {

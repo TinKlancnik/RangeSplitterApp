@@ -96,6 +96,25 @@ object TradeUtils {
     private val httpClient = OkHttpClient()
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    fun fetchPositionAvgPrice(
+        symbol: String,
+        onSuccess: (String?) -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        val client = BybitClientManager.client
+        val params = PositionInfoParams(category = Category.linear, symbol = symbol)
+
+        client.positionClient.getPositionInfo(params, object : ByBitRestApiCallback<PositionInfoResponse> {
+            override fun onSuccess(result: PositionInfoResponse) {
+                val pos = result.result.list.firstOrNull { it.symbol == symbol }
+                onSuccess(pos?.avgPrice)
+            }
+
+            override fun onError(error: Throwable) {
+                onError(error)
+            }
+        })
+    }
     fun closePositionMarket(
         symbol: String,
         qty: String,
