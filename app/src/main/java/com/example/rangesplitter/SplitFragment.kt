@@ -70,7 +70,6 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
         coinNameTextView.text = symbol
 
-        // WebSocket price subscription
         val wsSymbol = normalizeSymbolForWs(symbol)
         BybitLinearTickerWebSocket.addListener(this)
         BybitLinearTickerWebSocket.subscribe(wsSymbol)
@@ -94,7 +93,6 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
         spinner.adapter = spinnerAdapter
         spinner.setSelection(0)
 
-        // fetch balance once
         TradeUtils.fetchBalance { balance ->
             totalBalance = balance
             Log.d("SplitFragment", "Fetched balance: $totalBalance")
@@ -253,6 +251,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             }
 
             val batchOrderLinkId = newTradeBatchLinkId()
+            leverage(entry, sl)
             placeMarketTrade(qtyStr, Side.Buy, batchOrderLinkId)
             closeKeyboard(btn)
         }
@@ -293,6 +292,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             }
 
             val batchOrderLinkId = newTradeBatchLinkId()
+            leverage(entry, sl)
             placeMarketTrade(qtyStr, Side.Sell, batchOrderLinkId)
 
             closeKeyboard(btn)
@@ -338,31 +338,36 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
     // ---------------- helpers ----------------
 
     private fun leverage(midBid: Float, sl: Float) {
-        val slPercentage = ((midBid - sl) / midBid) * 100
+        val slPercentage = (kotlin.math.abs(midBid - sl) / midBid) * 100f
         Log.d("leverage", "Mid bid: $midBid, SL: $sl, SL Percentage: $slPercentage%")
 
-        if (slPercentage > 5) {
-            val multiplier = (50 / slPercentage).toInt()
-            val bybitClient = BybitClientManager.client
-            val leverageParams = LeverageParams(
-                category = Category.linear,
-                symbol = symbol,
-                buyLeverage = multiplier.toString(),
-                sellLeverage = multiplier.toString()
-            )
-            val callback = object : ByBitRestApiCallback<APIResponseV5> {
+        if (slPercentage <= 0f) return
+
+        val multiplier = (50f / slPercentage)
+            .coerceIn(1f, 100f)
+            .toInt()
+
+        val bybitClient = BybitClientManager.client
+        val leverageParams = LeverageParams(
+            category = Category.linear,
+            symbol = symbol,
+            buyLeverage = multiplier.toString(),
+            sellLeverage = multiplier.toString()
+        )
+
+        bybitClient.positionClient.setLeverage(
+            leverageParams,
+            object : ByBitRestApiCallback<APIResponseV5> {
+
                 override fun onSuccess(result: APIResponseV5) {
-                    Log.d("Leverage", "Leverage set successfully: $result")
-                    showTradeResultDialog("Success", "Leverage set successfully for $symbol.")
+                    Log.d("Leverage", "Leverage set to ${multiplier}x")
                 }
 
                 override fun onError(error: Throwable) {
-                    Log.e("Leverage", "Error encountered: ${error.message}")
-                    showTradeResultDialog("Error", "Failed to set leverage: ${error.message}")
+                    Log.e("Leverage", "Failed to set leverage: ${error.message}", error)
                 }
             }
-            bybitClient.positionClient.setLeverage(leverageParams, callback)
-        }
+        )
     }
 
     private fun calculatePositionSizes(
