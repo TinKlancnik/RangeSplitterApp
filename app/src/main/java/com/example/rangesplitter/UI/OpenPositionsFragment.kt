@@ -1,6 +1,7 @@
-package com.example.rangesplitter
+package com.example.rangesplitter.UI
 
 import android.os.Bundle
+import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,14 +10,15 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import bybit.sdk.rest.ByBitRestClient
 import com.example.rangesplitter.R
 import com.example.rangesplitter.TradeUtils.fetchOpenPositions
 import com.example.rangesplitter.TradeUtils.startPeriodicUpdate
+import com.example.rangesplitter.TradeUtils.stopPeriodicUpdate
 
 class OpenPositionsFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
+    private var periodicHandler: Handler? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -27,16 +29,22 @@ class OpenPositionsFragment : Fragment() {
         recyclerView = view.findViewById(R.id.openPositionsRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        // ✅ Fetch and display open positions
         fetchOpenPositions(recyclerView)
-        startPeriodicUpdate( recyclerView)
 
-        // Add custom divider
-        val dividerItemDecoration = DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL)
+        periodicHandler = startPeriodicUpdate(recyclerView)
+
+        val dividerItemDecoration =
+            DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL)
         val dividerDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.divider)
         dividerItemDecoration.setDrawable(dividerDrawable!!)
         recyclerView.addItemDecoration(dividerItemDecoration)
 
         return view
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        periodicHandler?.let { stopPeriodicUpdate(it) }
+        periodicHandler = null
     }
 }

@@ -100,11 +100,10 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             Log.d("SplitFragment", "Fetched balance: $totalBalance")
         }
 
-        // ✅ fetch lot size once
         TradeUtils.fetchLotSize(
             symbol = symbol,
             category = Category.linear,
-            useTestnet = true, // change to false for mainnet
+            useTestnet = true,
             onSuccess = { lot ->
                 lotSize = lot
                 Log.d(
@@ -404,32 +403,20 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
         side: Side,
         orderLinkId: String
     ) {
-        val bybitClient = BybitClientManager.client
-
-        val tradeParams = PlaceOrderParams(
-            category = Category.linear,
+        TradeUtils.placeLimitOrder(
             symbol = symbol,
-            side = side,
-            orderType = OrderType.Limit,
             price = price,
             qty = amount,
+            side = side,
             stopLoss = stopLoss,
             takeProfit = takeProfit,
-            timeInForce = TimeInForce.GTC,
+            orderLinkId = orderLinkId,
             reduceOnly = false,
-            orderLinkId = orderLinkId // ✅ SAME for all DCA orders
-        )
-
-        val callback = object : ByBitRestApiCallback<PlaceOrderResponse> {
-
-            override fun onSuccess(result: PlaceOrderResponse) {
+            onSuccess = { result ->
                 val placedOrderId = result.result.orderId
                 val returnedOrderLinkId = result.result.orderLinkId
 
-                Log.d(
-                    "Trade",
-                    "Order placed. orderId=$placedOrderId orderLinkId=$returnedOrderLinkId"
-                )
+                Log.d("Trade", "Order placed. orderId=$placedOrderId orderLinkId=$returnedOrderLinkId")
 
                 saveTradeToFirestore(
                     orderId = placedOrderId,
@@ -443,18 +430,12 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
                     "Success",
                     "Trade placed successfully for $symbol at $price (qty $amount)."
                 )
-            }
-
-            override fun onError(error: Throwable) {
+            },
+            onError = { error ->
                 Log.e("Trade", "Error encountered: ${error.message}", error)
-                showTradeResultDialog(
-                    "Error",
-                    "Failed to place trade: ${error.message}"
-                )
+                showTradeResultDialog("Error", "Failed to place trade: ${error.message}")
             }
-        }
-
-        bybitClient.orderClient.placeOrder(tradeParams, callback)
+        )
     }
 
     private fun placeMarketTrade(
@@ -462,23 +443,15 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
         side: Side,
         orderLinkId: String
     ) {
-        val bybitClient = BybitClientManager.client
-
-        val tradeParams = PlaceOrderParams(
-            category = Category.linear,
+        TradeUtils.placeMarketOrder(
             symbol = symbol,
-            side = side,
-            orderType = OrderType.Market,
             qty = amount,
+            side = side,
             stopLoss = stopLoss,
             takeProfit = takeProfit,
+            orderLinkId = orderLinkId,
             reduceOnly = false,
-            orderLinkId = orderLinkId
-        )
-
-        val callback = object : ByBitRestApiCallback<PlaceOrderResponse> {
-
-            override fun onSuccess(result: PlaceOrderResponse) {
+            onSuccess = { result ->
                 val placedOrderId = result.result.orderId
 
                 saveTradeToFirestore(
@@ -493,20 +466,13 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
                     "Success",
                     "Market order placed successfully for $symbol (qty $amount)."
                 )
-            }
-
-            override fun onError(error: Throwable) {
+            },
+            onError = { error ->
                 Log.e("MarketTrade", "Error encountered: ${error.message}", error)
-                showTradeResultDialog(
-                    "Error",
-                    "Failed to place market order: ${error.message}"
-                )
+                showTradeResultDialog("Error", "Failed to place market order: ${error.message}")
             }
-        }
-
-        bybitClient.orderClient.placeOrder(tradeParams, callback)
+        )
     }
-
 
 
     private fun showTradeResultDialog(title: String, message: String) {

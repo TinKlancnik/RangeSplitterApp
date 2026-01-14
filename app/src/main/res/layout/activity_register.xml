@@ -137,7 +137,7 @@
 
             <!-- Login button -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/loginButton"
+                android:id="@+id/registerButton"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:text="Resgister"
@@ -152,7 +152,7 @@
 
     <!-- Bottom sign up text -->
     <TextView
-        android:id="@+id/register"
+        android:id="@+id/login"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Already have an account? Login"

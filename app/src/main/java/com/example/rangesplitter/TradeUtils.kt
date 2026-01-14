@@ -93,10 +93,105 @@ data class LotSize(
 
 object TradeUtils {
 
-    // reuse single client + main-thread handler (for REST tickers)
     private val httpClient = OkHttpClient()
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    fun closePositionMarket(
+        symbol: String,
+        qty: String,
+        positionSide: Side,
+        onSuccess: (PlaceOrderResponse) -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        val closeSide = if (positionSide == Side.Buy) Side.Sell else Side.Buy
+
+        placeMarketOrder(
+            symbol = symbol,
+            qty = qty,
+            side = closeSide,
+            stopLoss = null,
+            takeProfit = null,
+            orderLinkId = "close_${System.currentTimeMillis()}",
+            reduceOnly = true,
+            onSuccess = onSuccess,
+            onError = onError
+        )
+    }
+
+    fun placeLimitOrder(
+        symbol: String,
+        price: String,
+        qty: String,
+        side: Side,
+        stopLoss: String? = null,
+        takeProfit: String? = null,
+        orderLinkId: String,
+        reduceOnly: Boolean = false,
+        onSuccess: (PlaceOrderResponse) -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        val client = BybitClientManager.client
+
+        val params = PlaceOrderParams(
+            category = Category.linear,
+            symbol = symbol,
+            side = side,
+            orderType = OrderType.Limit,
+            price = price,
+            qty = qty,
+            stopLoss = stopLoss,
+            takeProfit = takeProfit,
+            timeInForce = TimeInForce.GTC,
+            reduceOnly = reduceOnly,
+            orderLinkId = orderLinkId
+        )
+
+        client.orderClient.placeOrder(params, object : ByBitRestApiCallback<PlaceOrderResponse> {
+            override fun onSuccess(result: PlaceOrderResponse) {
+                mainHandler.post { onSuccess(result) }
+            }
+
+            override fun onError(error: Throwable) {
+                mainHandler.post { onError(error) }
+            }
+        })
+    }
+
+    fun placeMarketOrder(
+        symbol: String,
+        qty: String,
+        side: Side,
+        stopLoss: String? = null,
+        takeProfit: String? = null,
+        orderLinkId: String,
+        reduceOnly: Boolean = false,
+        onSuccess: (PlaceOrderResponse) -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        val client = BybitClientManager.client
+
+        val params = PlaceOrderParams(
+            category = Category.linear,
+            symbol = symbol,
+            side = side,
+            orderType = OrderType.Market,
+            qty = qty,
+            stopLoss = stopLoss,
+            takeProfit = takeProfit,
+            reduceOnly = reduceOnly,
+            orderLinkId = orderLinkId
+        )
+
+        client.orderClient.placeOrder(params, object : ByBitRestApiCallback<PlaceOrderResponse> {
+            override fun onSuccess(result: PlaceOrderResponse) {
+                mainHandler.post { onSuccess(result) }
+            }
+
+            override fun onError(error: Throwable) {
+                mainHandler.post { onError(error) }
+            }
+        })
+    }
     fun fetchOpenOrders(
         recyclerView: RecyclerView
     ) {
@@ -183,8 +278,12 @@ object TradeUtils {
                 }
 
                 recyclerView.post {
-                    val adapter = OpenPositionsAdapter(openPositions)
-                    recyclerView.adapter = adapter
+                    recyclerView.adapter = OpenPositionsAdapter(
+                        openPositions,
+                        onPositionClosed = {
+                            fetchOpenPositions(recyclerView)
+                        }
+                    )
                 }
             }
 
@@ -446,34 +545,6 @@ object TradeUtils {
     }
     private fun cleanNumber(text: String): String =
         text.replace(",", "").trim()
-
-    fun placeMarketOrder(
-        order: OrderRequest,
-        onSuccess: (String) -> Unit,
-        onError: (String) -> Unit
-    ) {
-        val client = BybitClientManager.client
-
-        val params = PlaceOrderParams(
-            category = Category.linear,
-            symbol = order.symbol,
-            side = order.side,
-            orderType = OrderType.Market,
-            qty = cleanNumber(order.qty),
-            takeProfit = order.takeProfit?.let { cleanNumber(it) },
-            stopLoss = order.stopLoss?.let { cleanNumber(it) }
-        )
-
-        client.orderClient.placeOrder(params, object : ByBitRestApiCallback<PlaceOrderResponse> {
-            override fun onSuccess(result: PlaceOrderResponse) {
-                onSuccess(result.result?.orderId ?: "N/A")
-            }
-
-            override fun onError(error: Throwable) {
-                onError(error.message ?: "Unknown error")
-            }
-        })
-    }
 
     private val lotSizeCache = mutableMapOf<String, LotSize>()
 

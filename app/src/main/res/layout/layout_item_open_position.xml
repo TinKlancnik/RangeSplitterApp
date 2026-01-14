@@ -150,18 +150,13 @@
             android:orientation="vertical">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/journalButton"
+                android:id="@+id/btnCloseTrade"
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
-                android:text="Save"
-                android:textAllCaps="false"
-                app:icon="@drawable/diary"
-                app:iconGravity="textStart"
-                app:iconPadding="8dp"
+                android:text="Close"
                 style="@style/Widget.Material3.Button"
-                android:backgroundTint="@color/buttonDefault"
+                android:backgroundTint="@color/red"
                 android:textColor="@color/white"
-                app:iconTint="@color/white"
                 app:cornerRadius="20dp"
                 android:checkable="true"
                 android:layout_gravity="end"/>
