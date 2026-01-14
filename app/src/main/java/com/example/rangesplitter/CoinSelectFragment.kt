@@ -19,8 +19,6 @@ import com.example.rangesplitter.ws.BybitLinearTickerWebSocket.TickerUpdate
 
 class CoinSelectFragment : Fragment(R.layout.fragment_coin_select), TickerListener {
 
-    // ---------------- ADAPTER ----------------
-
     private class CoinAdapter(
         private val items: List<Coin>,
         private val tickerMap: Map<String, TickerUpdate>,

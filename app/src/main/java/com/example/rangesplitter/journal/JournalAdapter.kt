@@ -10,7 +10,8 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class JournalAdapter(
-    private val items: MutableList<JournalTrade> = mutableListOf()
+    private val items: MutableList<JournalTrade> = mutableListOf(),
+    private val onReasonClick: (JournalTrade) -> Unit
 ) : RecyclerView.Adapter<JournalAdapter.JournalVH>() {
 
     class JournalVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -24,7 +25,6 @@ class JournalAdapter(
         val date: TextView = itemView.findViewById(R.id.tradeDate)
         val pnlBar: View = itemView.findViewById(R.id.pnlBar)
         val statusDot: View = itemView.findViewById(R.id.statusDot)
-
         val side: TextView = itemView.findViewById(R.id.direction)
     }
 
@@ -40,8 +40,10 @@ class JournalAdapter(
 
         holder.coinName.text = t.symbol
         holder.direction.text = t.side
-        if(t.side=="SELL") {
+        if (t.side.equals("SELL")) {
             holder.direction.setTextColor(ctx.getColor(R.color.vibrant_red))
+        } else {
+            holder.direction.setTextColor(ctx.getColor(R.color.vibrant_green))
         }
 
         holder.entry.text = t.entryPrice.toString()
@@ -64,8 +66,11 @@ class JournalAdapter(
             holder.pnlPercent.setTextColor(ctx.getColor(R.color.vibrant_red))
         }
 
-
         holder.reason.text = t.reason ?: "Add note…"
+        holder.reason.setOnClickListener {
+            onReasonClick(t)
+        }
+
 
         val sdf = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
         holder.date.text = t.entryTime?.toDate()?.let { sdf.format(it) } ?: "—"

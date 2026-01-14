@@ -16,13 +16,11 @@
         android:orientation="vertical"
         android:padding="14dp">
 
-        <!-- Row 1: Symbol + Side | Leverage pill -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <!-- Left: symbol + side -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -30,7 +28,6 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
-                <!-- Small status dot (optional) -->
                 <View
                     android:id="@+id/statusDot"
                     android:layout_width="8dp"
@@ -48,7 +45,6 @@
                     android:textColor="@color/textPrimary"
                     android:layout_marginEnd="10dp" />
 
-                <!-- Side badge -->
                 <TextView
                     android:id="@+id/direction"
                     android:layout_width="wrap_content"
@@ -63,7 +59,6 @@
                     android:background="@drawable/journal_btn" />
             </LinearLayout>
 
-            <!-- Right: leverage pill -->
             <TextView
                 android:id="@+id/leverage"
                 android:layout_width="wrap_content"
@@ -77,14 +72,12 @@
                 android:background="@drawable/journal_btn" />
         </LinearLayout>
 
-        <!-- Row 2: Entry price + Quantity -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:orientation="horizontal">
 
-            <!-- Entry -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -131,7 +124,6 @@
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
-            <!-- Quantity -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -157,7 +149,6 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Row 3: P/L bar -->
         <LinearLayout
             android:id="@+id/pnlBar"
             android:layout_width="match_parent"
@@ -191,7 +182,6 @@
                 android:textSize="14sp" />
         </LinearLayout>
 
-        <!-- Row 4: Note / Reason -->
         <TextView
             android:id="@+id/reason"
             android:layout_width="match_parent"
@@ -207,7 +197,6 @@
             android:drawableTint="@color/textMuted"
             android:gravity="center_vertical" />
 
-        <!-- Row 5: Date -->
         <TextView
             android:id="@+id/tradeDate"
             android:layout_width="match_parent"

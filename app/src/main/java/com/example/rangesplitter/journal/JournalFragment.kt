@@ -11,6 +11,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import androidx.lifecycle.lifecycleScope
+import com.example.rangesplitter.MainActivity
 import com.example.rangesplitter.sync.TradeSyncManager
 import com.example.rangesplitter.sync.BybitTradeApiImpl
 
@@ -18,7 +19,6 @@ import com.example.rangesplitter.sync.BybitTradeApiImpl
 class JournalFragment : Fragment(R.layout.fragment_journal) {
 
     private lateinit var tradeSyncManager: TradeSyncManager
-    private lateinit var adapter: JournalAdapter
     private var listener: ListenerRegistration? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -29,7 +29,12 @@ class JournalFragment : Fragment(R.layout.fragment_journal) {
 
         val recyclerView = view.findViewById<RecyclerView>(R.id.tradesRecyclerView)
 
-        adapter = JournalAdapter()
+        val adapter = JournalAdapter(mutableListOf()) { trade ->
+            (requireActivity() as MainActivity).openEditJournalTrade(trade.id)
+        }
+
+        recyclerView.adapter = adapter
+
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
         recyclerView.setHasFixedSize(true)

@@ -8,9 +8,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.viewpager2.widget.ViewPager2
+import com.example.rangesplitter.journal.EditJournalTradeFragment
 import com.example.rangesplitter.ui.NavigationHelper
 import com.example.rangesplitter.settings.SettingsFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -64,7 +66,9 @@ class MainActivity : AppCompatActivity() {
     fun openSettings() {
         openOverlay(SettingsFragment(), "SETTINGS")
     }
-
+    fun openEditJournalTrade(tradeId: String) {
+        openOverlay(EditJournalTradeFragment.newInstance(tradeId), "EDIT_TRADE")
+    }
     private fun openOverlay(fragment: androidx.fragment.app.Fragment, tag: String) {
         findViewById<View>(R.id.fragmentContainer).apply {
             visibility = View.VISIBLE
@@ -74,6 +78,7 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.beginTransaction()
             .setReorderingAllowed(true)
             .replace(R.id.fragmentContainer, fragment, tag)
+            .addToBackStack(tag)
             .commit()
     }
 
