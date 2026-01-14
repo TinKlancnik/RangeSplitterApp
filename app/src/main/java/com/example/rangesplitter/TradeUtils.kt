@@ -144,7 +144,7 @@ object TradeUtils {
         side: Side,
         stopLoss: String? = null,
         takeProfit: String? = null,
-        orderLinkId: String,
+        orderLinkId: String? = null,
         reduceOnly: Boolean = false,
         onSuccess: (PlaceOrderResponse) -> Unit,
         onError: (Throwable) -> Unit

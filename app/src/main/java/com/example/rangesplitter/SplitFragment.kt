@@ -157,7 +157,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
                 for ((price, amount) in positionData) {
                     val qtyStr = TradeUtils.adjustQtyToLotSize(amount.toDouble(), lot) ?: continue
-                    placeATrade(price.toString(), qtyStr, Side.Buy, batchOrderLinkId)
+                    placeATrade(price.toString(), qtyStr, Side.Buy)
                 }
 
                 closeKeyboard(btn)
@@ -202,7 +202,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
 
                 for ((price, amount) in positionData) {
                     val qtyStr = TradeUtils.adjustQtyToLotSize(amount.toDouble(), lot) ?: continue
-                    placeATrade(price.toString(), qtyStr, Side.Sell, batchOrderLinkId)
+                    placeATrade(price.toString(), qtyStr, Side.Sell)
                 }
 
                 closeKeyboard(btn)
@@ -306,7 +306,6 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
         BybitLinearTickerWebSocket.removeListener(this)
     }
 
-    // ---------------- SL/TP dialog ----------------
 
     private fun showSlTpDialog() {
         val dialogView = layoutInflater.inflate(R.layout.sl_tp_dialog, null)
@@ -405,8 +404,7 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
     private fun placeATrade(
         price: String,
         amount: String,
-        side: Side,
-        orderLinkId: String
+        side: Side
     ) {
         TradeUtils.placeLimitOrder(
             symbol = symbol,
@@ -415,17 +413,15 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             side = side,
             stopLoss = stopLoss,
             takeProfit = takeProfit,
-            orderLinkId = orderLinkId,
             reduceOnly = false,
             onSuccess = { result ->
                 val placedOrderId = result.result.orderId
-                val returnedOrderLinkId = result.result.orderLinkId
 
-                Log.d("Trade", "Order placed. orderId=$placedOrderId orderLinkId=$returnedOrderLinkId")
+                Log.d("Trade", "Order placed. orderId=$placedOrderId")
 
                 saveTradeToFirestore(
                     orderId = placedOrderId,
-                    orderLinkId = returnedOrderLinkId,
+                    orderLinkId = null,
                     side = side,
                     qty = amount,
                     entryPrice = price
@@ -438,10 +434,14 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             },
             onError = { error ->
                 Log.e("Trade", "Error encountered: ${error.message}", error)
-                showTradeResultDialog("Error", "Failed to place trade: ${error.message}")
+                showTradeResultDialog(
+                    "Error",
+                    "Failed to place trade: ${error.message}"
+                )
             }
         )
     }
+
 
     private fun placeMarketTrade(
         amount: String,
