@@ -40,11 +40,13 @@ class JournalAdapter(
 
         holder.coinName.text = t.symbol
         holder.direction.text = t.side
-        if (t.side.equals("SELL")) {
-            holder.direction.setTextColor(ctx.getColor(R.color.vibrant_red))
-        } else {
-            holder.direction.setTextColor(ctx.getColor(R.color.vibrant_green))
-        }
+
+        val sideNorm = t.side.trim().uppercase()
+        val isSellOrShort = sideNorm == "SELL" || sideNorm == "SHORT"
+
+        holder.direction.setTextColor(
+            ctx.getColor(if (isSellOrShort) R.color.vibrant_red else R.color.vibrant_green)
+        )
 
         holder.entry.text = t.entryPrice.toString()
         holder.exit.text = t.exitPrice?.toString() ?: "-"

@@ -2,6 +2,7 @@ package com.example.rangesplitter.journal
 
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -20,12 +21,18 @@ class JournalFragment : Fragment(R.layout.fragment_journal) {
 
     private lateinit var tradeSyncManager: TradeSyncManager
     private var listener: ListenerRegistration? = null
+    private var direction: TextView? = null
+    private var profitableValue: TextView? = null
+    private var totalTradesValue: TextView? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         tradeSyncManager = TradeSyncManager(bybitApi = BybitTradeApiImpl())
 
+        direction = view.findViewById(R.id.direction)
+        profitableValue = view.findViewById(R.id.profitableValue)
+        totalTradesValue = view.findViewById(R.id.totalTradesValue)
 
         val recyclerView = view.findViewById<RecyclerView>(R.id.tradesRecyclerView)
 
@@ -33,15 +40,12 @@ class JournalFragment : Fragment(R.layout.fragment_journal) {
             (requireActivity() as MainActivity).openEditJournalTrade(trade.id)
         }
 
-        recyclerView.adapter = adapter
-
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
         recyclerView.setHasFixedSize(true)
         recyclerView.itemAnimator = null
 
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
-        if (uid == null) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: run {
             Toast.makeText(requireContext(), "Not logged in", Toast.LENGTH_SHORT).show()
             return
         }
@@ -72,6 +76,13 @@ class JournalFragment : Fragment(R.layout.fragment_journal) {
                         status = doc.getString("status") ?: "OPEN"
                     )
                 }
+
+                val closedTrades = trades.filter { it.status.equals("CLOSED") }
+                val closedCount = closedTrades.size
+                val profitableCount = closedTrades.count { (it.pnlUsd ?: 0.0) > 0.0 }
+
+                totalTradesValue?.text = closedCount.toString()
+                profitableValue?.text = profitableCount.toString()
 
                 adapter.submitList(trades)
             }

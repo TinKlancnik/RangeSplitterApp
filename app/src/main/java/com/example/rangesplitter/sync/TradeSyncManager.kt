@@ -14,16 +14,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-/**
- * Sync strategy (heuristic):
- * - Get OPEN trades from Firestore
- * - Fetch Bybit closed-pnl by symbol in a time window
- * - Group closed-pnl rows into "close events" (rows within 5 seconds)
- * - For each event, aggregate pnl + exitPrice, then mark OPEN trades for that symbol as CLOSED
- *   when trade.entryTime <= eventEndTime.
- *
- * This avoids matching by orderId/orderLinkId (since closed-pnl didn't give orderLinkId).
- */
 class TradeSyncManager(
     private val bybitApi: BybitTradeApi,
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
@@ -66,7 +56,6 @@ class TradeSyncManager(
 
         val tradesCol = db.collection("users").document(uid).collection("trades")
 
-        // Keep query simple (no composite index required)
         val snap = tradesCol
             .whereEqualTo("status", "OPEN")
             .limit(100)
@@ -93,7 +82,6 @@ class TradeSyncManager(
         val now = System.currentTimeMillis()
         val start = now - lookbackMs
 
-        // group open trades by symbol (fewer API calls)
         openTrades.groupBy { it.symbol }.forEach { (symbol, symbolTrades) ->
             val closed = try {
                 bybitApi.fetchClosedPnl(symbol, start, now)
@@ -104,19 +92,9 @@ class TradeSyncManager(
 
             if (closed.isEmpty()) return@forEach
 
-            // --- DEBUG (optional but useful) ---
-            Log.d(TAG, "ClosedPnL for $symbol -> ${closed.size} items")
-            closed.take(5).forEach { item ->
-                Log.d(
-                    TAG,
-                    "CLOSED: orderId=${item.orderId} created=${msToReadable(item.createdTimeMs)} updated=${msToReadable(item.updatedTimeMs)} exit=${item.avgExitPrice} pnl=${item.closedPnl}"
-                )
-            }
-
             val events = buildCloseEvents(closed, windowMs)
             if (events.isEmpty()) return@forEach
 
-            // For each close event, close any OPEN trades whose entryTime <= eventEndTime
             for (event in events) {
                 val eventEndMs = event.maxOfOrNull { it.updatedTimeMs ?: 0L } ?: 0L
                 if (eventEndMs <= 0L) continue
@@ -133,11 +111,6 @@ class TradeSyncManager(
             }
         }
     }
-
-    /**
-     * Group closed-pnl rows into close "events" by updatedTime.
-     * Items within [windowMs] are treated as same event.
-     */
     private fun buildCloseEvents(items: List<ClosedPnlItem>, windowMs: Long): List<List<ClosedPnlItem>> {
         val sorted = items
             .filter { (it.updatedTimeMs ?: 0L) > 0L }
@@ -165,9 +138,6 @@ class TradeSyncManager(
         return events
     }
 
-    /**
-     * Weighted exit using closedSize (if available). Falls back to simple average.
-     */
     private fun weightedExitPrice(event: List<ClosedPnlItem>): Double {
         val den = event.sumOf { (it.closedSize ?: 0.0).coerceAtLeast(0.0) }
         if (den > 0.0) {
@@ -200,7 +170,6 @@ class TradeSyncManager(
     }
 }
 
-/** Minimal Firestore trade shape for this heuristic. */
 private data class FireTrade(
     val orderId: String,
     val symbol: String,
