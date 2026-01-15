@@ -275,7 +275,7 @@
                                     android:paddingStart="14dp"
                                     android:paddingEnd="14dp"
                                     android:hint="102.56"
-                                    android:inputType="number"
+                                    android:inputType="numberDecimal"
                                     android:textColor="@color/textPrimary"
                                     android:textColorHint="@color/textMuted"
                                     android:textSize="15sp" />
