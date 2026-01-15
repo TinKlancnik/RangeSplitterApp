@@ -25,7 +25,6 @@ class JournalAdapter(
         val date: TextView = itemView.findViewById(R.id.tradeDate)
         val pnlBar: View = itemView.findViewById(R.id.pnlBar)
         val statusDot: View = itemView.findViewById(R.id.statusDot)
-        val side: TextView = itemView.findViewById(R.id.direction)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): JournalVH {
