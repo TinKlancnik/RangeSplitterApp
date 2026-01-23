@@ -25,6 +25,7 @@ class JournalAdapter(
         val date: TextView = itemView.findViewById(R.id.tradeDate)
         val pnlBar: View = itemView.findViewById(R.id.pnlBar)
         val statusDot: View = itemView.findViewById(R.id.statusDot)
+        val tradeSource: TextView = itemView.findViewById(R.id.tradeSource)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): JournalVH {
@@ -51,7 +52,11 @@ class JournalAdapter(
         holder.exit.text = t.exitPrice?.toString() ?: "-"
         holder.quantity.text = t.qty.toString()
 
-        val pnl = t.pnlUsd
+        val sourceText = if (t.createdInApp) "APP" else "BYBIT"
+        val typeText = (t.entryType ?: "—").uppercase()
+        holder.tradeSource.text = "$sourceText • $typeText"
+
+        val pnl = t.pnl
 
         if (pnl == null) {
             holder.pnlPercent.text = "—"

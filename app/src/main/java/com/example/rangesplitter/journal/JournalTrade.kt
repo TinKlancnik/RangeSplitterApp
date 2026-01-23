@@ -9,8 +9,10 @@ data class JournalTrade(
     val qty: Double = 0.0,
     val entryPrice: Double = 0.0,
     val exitPrice: Double? = null,
-    val pnlUsd: Double? = null,
+    val pnl: Double? = null,
     val reason: String? = null,
     val entryTime: Timestamp? = null,
-    val status: String = "DRAFT"
+    val status: String = "DRAFT",
+    val createdInApp: Boolean = false,
+    val entryType: String? = null
 )

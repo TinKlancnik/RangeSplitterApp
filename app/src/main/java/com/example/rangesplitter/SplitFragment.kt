@@ -424,7 +424,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
                     orderLinkId = null,
                     side = side,
                     qty = amount,
-                    entryPrice = price
+                    entryPrice = price,
+                    entryType = "LIMIT"
                 )
 
                 showTradeResultDialog(
@@ -441,7 +442,6 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             }
         )
     }
-
 
     private fun placeMarketTrade(
         amount: String,
@@ -477,7 +477,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
                             orderLinkId = returnedOrderLinkId,
                             side = side,
                             qty = amount,
-                            entryPrice = entry
+                            entryPrice = entry,
+                            entryType = "MARKET"
                         )
                     },
                     onError = {
@@ -486,7 +487,8 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
                             orderLinkId = returnedOrderLinkId,
                             side = side,
                             qty = amount,
-                            entryPrice = uiPrice
+                            entryPrice = uiPrice,
+                            entryType = "MARKET"
                         )
                     }
                 )
@@ -505,8 +507,6 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             }
         )
     }
-
-
 
     private fun showTradeResultDialog(title: String, message: String) {
         activity?.runOnUiThread {
@@ -538,7 +538,9 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
         orderLinkId: String?,
         side: Side,
         qty: String,
-        entryPrice: String?
+        entryPrice: String?,
+        entryType: String,
+        createdInApp: Boolean = true
     ) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val db = FirebaseFirestore.getInstance()
@@ -557,7 +559,9 @@ class SplitFragment : Fragment(R.layout.fragment_split), TickerListener {
             "entryPrice" to entryPrice?.toDoubleOrNull(),
             "status" to "OPEN",
             "entryTime" to FieldValue.serverTimestamp(),
-            "updatedAt" to FieldValue.serverTimestamp()
+            "updatedAt" to FieldValue.serverTimestamp(),
+            "createdInApp" to createdInApp,
+            "entryType" to entryType
         )
 
         doc.set(data, SetOptions.merge())

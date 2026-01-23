@@ -70,16 +70,18 @@ class JournalFragment : Fragment(R.layout.fragment_journal) {
                         qty = doc.getDouble("qty") ?: 0.0,
                         entryPrice = doc.getDouble("entryPrice") ?: 0.0,
                         exitPrice = doc.getDouble("exitPrice"),
-                        pnlUsd = doc.getDouble("pnl"),
+                        pnl = doc.getDouble("pnl"),
                         reason = doc.getString("reason"),
                         entryTime = doc.getTimestamp("entryTime"),
-                        status = doc.getString("status") ?: "OPEN"
+                        status = doc.getString("status") ?: "OPEN",
+                        createdInApp = doc.getBoolean("createdInApp") ?: false,
+                        entryType = doc.getString("entryType")
                     )
                 }
 
                 val closedTrades = trades.filter { it.status.equals("CLOSED") }
                 val closedCount = closedTrades.size
-                val profitableCount = closedTrades.count { (it.pnlUsd ?: 0.0) > 0.0 }
+                val profitableCount = closedTrades.count { (it.pnl ?: 0.0) > 0.0 }
 
                 totalTradesValue?.text = closedCount.toString()
                 profitableValue?.text = profitableCount.toString()
